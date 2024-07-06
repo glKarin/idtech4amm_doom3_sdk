@@ -6,3 +6,4 @@ Doom3 SDK for Android idTech4A++
 ```build_arm64.bat```
 #### Build arm32
 ```build_arm32.bat```
+#### target libraries on `neo/build`
