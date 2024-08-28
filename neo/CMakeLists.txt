@@ -89,13 +89,15 @@ endif()
 option(OPENGLES3							"OpenGLES3 support"															ON)
 option(OPENAL								"OpenAL(soft, OpenSL as backend) support"									ON)
 option(MULTITHREAD							"Multi-Thread support"														ON)
-option(USING_STB							"Using stb"																	ON)
+option(USE_STB_IMAGE						"Using stb_image"															ON)
 option(SUPPORT_OBJ							"Support obj model"															ON)
 option(SUPPORT_DAE							"Support dae model" 														ON)
 option(SHADOW_MAPPING						"Shadow mapping support" 													ON)
 option(NO_LIGHT								"r_noLight support" 														ON)
 option(STENCIL_SHADOW_IMPROVE				"Improve stencil shadow(translucent, soft(Only OpenGLES3.1+))" 				ON)
 option(EXTRAS_TOOLS							"Add extras commands" 														OFF)
+option(USE_MINIZ							"use miniz and minizip" 													OFF)
+option(USE_STB_OGG							"use stb_vorbis" 															OFF)
 
 # DOOM3 cores
 option(BASE									"Build the base game code" 													ON)
@@ -191,11 +193,11 @@ add_definitions(-DD3_ARCH="${cpu}" -DD3_SIZEOFPTR=${CMAKE_SIZEOF_VOID_P})
 # Stores in variable <var> either 1 or 0 indicating whether the target architecture is big or little endian.
 # test_big_endian(big_endian)
 if(CMAKE_CXX_BYTE_ORDER EQUAL BIG_ENDIAN)
-	set(big_endian, "1")
+	set(big_endian 1)
 else()
-	set(big_endian, "0")
+	set(big_endian 0)
 endif()
-add_definitions(-BUILD_IS_BIG_ENDIAN="${big_endian}")
+add_definitions(-DBUILD_IS_BIG_ENDIAN=${big_endian})
 
 # target os
 if(APPLE)
@@ -510,9 +512,13 @@ if(COMPILE_CURL STREQUAL "1")
 	message(STATUS "Build cURL")
 endif()
 
-if(USING_STB)
+if(USE_STB_IMAGE)
 	set(CORE_DEFINES "${CORE_DEFINES} -D_USING_STB")
 	message(STATUS "Using stb jpeg image")
+endif()
+if(USE_STB_OGG)
+	set(CORE_DEFINES "${CORE_DEFINES} -D_USING_STB_OGG")
+	message(STATUS "Using stb oggvorbis")
 endif()
 if(SUPPORT_OBJ)
 	set(CORE_DEFINES "${CORE_DEFINES} -D_MODEL_OBJ")
@@ -539,6 +545,9 @@ if(STENCIL_SHADOW_IMPROVE)
 		message(STATUS "Add soft stencil shadow support")
 	endif()
 	message(STATUS "Add stencil shadow support: ${stencil_shadow_improve_desc}")
+endif()
+if(USE_MINIZ)
+	message(STATUS "Using minizip and miniz instead of zlib")
 endif()
 
 if(OPENAL)
@@ -575,6 +584,12 @@ set(src_idlib
 	idlib/math/Rotation.cpp
 	idlib/math/Simd.cpp
 	idlib/math/Simd_Generic.cpp
+	idlib/math/Simd_AltiVec.cpp
+	idlib/math/Simd_MMX.cpp
+	idlib/math/Simd_3DNow.cpp
+	idlib/math/Simd_SSE.cpp
+	idlib/math/Simd_SSE2.cpp
+	idlib/math/Simd_SSE3.cpp
 	idlib/math/Vector.cpp
 	idlib/BitMsg.cpp
 	idlib/LangDict.cpp

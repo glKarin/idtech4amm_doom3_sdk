@@ -78,17 +78,17 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 //#if defined(GL_ES_VERSION_2_0)
-#ifndef GL_RGB8
+#ifndef GL_RGB8 //karin: !!Only for OpenGLES2.0 compat, it defined and not equals GL_RGB if in OpenGLES3.0!!
 #define GL_RGB8	GL_RGB
 #endif
-#ifndef GL_RGBA8
+#ifndef GL_RGBA8 //karin: !!Only for OpenGLES2.0 compat, it defined and not equals GL_RGBA if in OpenGLES3.0!!
 #define GL_RGBA8	GL_RGBA
 #endif
-#ifndef GL_ALPHA8
+#ifndef GL_ALPHA8 //karin: !!Only for OpenGLES2.0 compat, it defined and not equals GL_ALPHA if in OpenGLES3.0!!
 #define GL_ALPHA8 GL_ALPHA
 #endif
-#ifndef GL_RGB5
-#define GL_RGB5	GL_RGB5_A1 // GL_RGBA
+#ifndef GL_RGB5 //karin: !!Only for OpenGLES2.0 compat, it defined and not equals GL_RGB if in OpenGLES3.0!!
+#define GL_RGB5	GL_RGB565 // GL_RGB5_A1 // GL_RGBA
 #endif
 #ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
 #define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83f2
@@ -115,6 +115,41 @@ If you have questions concerning this license or the applicable additional terms
 #define GL_DEBUG_TYPE_ERROR               0x824C
 #endif
 
+#ifndef GL_TEXTURE_WIDTH
+#define GL_TEXTURE_WIDTH                  0x1000
+#endif
+#ifndef GL_TEXTURE_HEIGHT
+#define GL_TEXTURE_HEIGHT                 0x1001
+#endif
+#ifndef GL_TEXTURE_INTERNAL_FORMAT
+#define GL_TEXTURE_INTERNAL_FORMAT        0x1003
+#endif
+#ifndef GL_TEXTURE_RED_TYPE
+#define GL_TEXTURE_RED_TYPE               0x8C10
+#endif
+#ifndef GL_TEXTURE_GREEN_TYPE
+#define GL_TEXTURE_GREEN_TYPE             0x8C11
+#endif
+#ifndef GL_TEXTURE_BLUE_TYPE
+#define GL_TEXTURE_BLUE_TYPE              0x8C12
+#endif
+#ifndef GL_TEXTURE_ALPHA_TYPE
+#define GL_TEXTURE_ALPHA_TYPE             0x8C13
+#endif
+#ifndef GL_TEXTURE_RED_SIZE
+#define GL_TEXTURE_RED_SIZE               0x805C
+#endif
+#ifndef GL_TEXTURE_GREEN_SIZE
+#define GL_TEXTURE_GREEN_SIZE             0x805D
+#endif
+#ifndef GL_TEXTURE_BLUE_SIZE
+#define GL_TEXTURE_BLUE_SIZE              0x805E
+#endif
+#ifndef GL_TEXTURE_ALPHA_SIZE
+#define GL_TEXTURE_ALPHA_SIZE             0x805F
+#endif
+
+
 //#include "matrix/esUtil.h"
 
 typedef void (*GLExtension_t)(void);
@@ -137,9 +172,4 @@ typedef void (GL_APIENTRY  *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLe
 #endif
 #define QGLPROC(name, rettype, args) extern rettype (GL_APIENTRYP q##name) args;
 #include "qgl_proc.h"
-
-#define GL_BLIT_FRAMEBUFFER_AVAILABLE() ( GLIMP_PROCISVALID(qglBlitFramebuffer) )
-#define GL_DRAW_BUFFERS_AVAILABLE() ( GLIMP_PROCISVALID(qglDrawBuffers) )
-#define GL_DEBUG_MESSAGE_AVAILABLE() ( GLIMP_PROCISVALID(qglDebugMessageControl) && GLIMP_PROCISVALID(qglDebugMessageCallback) && GLIMP_PROCISVALID(qglGetDebugMessageLog))
-
 #endif
