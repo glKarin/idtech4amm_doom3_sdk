@@ -340,3 +340,9 @@ idCVar harm_pm_fullBodyAwarenessHeadJoint( "harm_pm_fullBodyAwarenessHeadJoint",
 idCVar harm_pm_fullBodyAwarenessFixed( "harm_pm_fullBodyAwarenessFixed", "0", CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL | CVAR_ARCHIVE, "do not attach view position to head in full-body awareness" );
 idCVar harm_pm_fullBodyAwarenessHeadVisible( "harm_pm_fullBodyAwarenessHeadVisible", "0", CVAR_GAME | CVAR_NETWORKSYNC | CVAR_BOOL | CVAR_ARCHIVE, "do not suppress head in full-body awareness" );
 #endif
+#ifdef _MOD_VIEW_BODY
+idCVar harm_ui_showViewBody( "harm_ui_showViewBody", "0", CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "show view body" );
+#endif
+#ifdef __ANDROID__ //karin: re-normalize player movement direction. only for DIII4A smooth onscreen joystick control
+idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0", CVAR_GAME | CVAR_BOOL, "Re-normalize player/walker movement direction");
+#endif

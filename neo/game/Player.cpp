@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Game_local.h"
 
+#ifdef _MOD_VIEW_BODY
+#include "ViewBody.cpp"
+#endif
 /*
 ===============================================================================
 
@@ -1220,6 +1223,9 @@ idPlayer::idPlayer()
 	isChatting				= false;
 
 	selfSmooth				= false;
+#ifdef _MOD_VIEW_BODY
+	viewBody				= NULL;
+#endif
 }
 
 /*
@@ -1357,6 +1363,9 @@ void idPlayer::Init(void)
 	healthTake		= false;
 
 	SetupWeaponEntity();
+#ifdef _MOD_VIEW_BODY
+    SetupViewBody();
+#endif
 	currentWeapon = -1;
 	previousWeapon = -1;
 
@@ -1733,6 +1742,13 @@ idPlayer::~idPlayer()
 {
 	delete weapon.GetEntity();
 	weapon = NULL;
+#ifdef _MOD_VIEW_BODY
+	if(viewBody.GetEntity())
+	{
+		delete viewBody.GetEntity();
+		viewBody = NULL;
+	}
+#endif
 }
 
 /*
@@ -2854,6 +2870,11 @@ void idPlayer::EnterCinematic(void)
 	if (weaponEnabled && weapon.GetEntity()) {
 		weapon.GetEntity()->EnterCinematic();
 	}
+#ifdef _MOD_VIEW_BODY
+	if (viewBody.GetEntity()) {
+		viewBody.GetEntity()->EnterCinematic();
+	}
+#endif
 
 	AI_FORWARD		= false;
 	AI_BACKWARD		= false;
@@ -2889,11 +2910,46 @@ void idPlayer::ExitCinematic(void)
 	if (weaponEnabled && weapon.GetEntity()) {
 		weapon.GetEntity()->ExitCinematic();
 	}
+#ifdef _MOD_VIEW_BODY
+	if (viewBody.GetEntity()) {
+		viewBody.GetEntity()->ExitCinematic();
+	}
+#endif
 
 	SetState("ExitCinematic");
 	UpdateScript();
 }
 
+#ifdef __ANDROID__ //karin: for in smooth joystick on Android
+#define _AVA_DEG 67.5f // 60
+#define _INCR_AVA_DEG(x) ((x) + _AVA_DEG)
+#define _DECR_AVA_DEG(x) ((x) - _AVA_DEG)
+#define GAME_SETUPCMDDIRECTION(_cmd, _forward, _backward, _left, _right) \
+{ \
+	if(_cmd.forwardmove != 0 || _cmd.rightmove != 0) { \
+		float a = (float)atan2(_cmd.rightmove, _cmd.forwardmove); \
+		a = RAD2DEG(a); \
+		if (a >= 360.0f || a < 0.0f) { \
+			a -= floor(a / 360.0f) * 360.0f; \
+			if (a >= 360.0f) { \
+				a -= 360.0f; \
+			} \
+			else if (a < 0.0f) { \
+				a += 360.0f; \
+			} \
+		} \
+		_forward = ((a >= 0 && a <= _INCR_AVA_DEG(0)) || (a >= _DECR_AVA_DEG(360) && a <= 360)); \
+		_backward = (a >= _DECR_AVA_DEG(180) && a <= _INCR_AVA_DEG(180)); \
+		_left = (a > _DECR_AVA_DEG(270) && a < _INCR_AVA_DEG(270)); \
+		_right = (a > _DECR_AVA_DEG(90) && a < _INCR_AVA_DEG(90)); \
+	} else { \
+		_forward = false; \
+		_backward = false; \
+		_left = false; \
+		_right = false; \
+	} \
+}
+#endif
 /*
 =====================
 idPlayer::UpdateConditions
@@ -2923,10 +2979,31 @@ void idPlayer::UpdateConditions(void)
 		AI_STRAFE_LEFT	= AI_ONGROUND && (sidespeed > 20.01f);
 		AI_STRAFE_RIGHT	= AI_ONGROUND && (sidespeed < -20.01f);
 	} else if (xyspeed > MIN_BOB_SPEED) {
+#ifdef __ANDROID__ //karin: for in smooth joystick on Android
+		if(harm_g_normalizeMovementDirection.GetBool())
+		{
+			if(AI_ONGROUND)
+			{
+				GAME_SETUPCMDDIRECTION(usercmd, AI_FORWARD, AI_BACKWARD, AI_STRAFE_LEFT, AI_STRAFE_RIGHT);
+			}
+			else
+			{
+                AI_FORWARD		= false;
+                AI_BACKWARD		= false;
+                AI_STRAFE_LEFT	= false;
+                AI_STRAFE_RIGHT	= false;
+			}
+		}
+		else
+		{
+#endif
 		AI_FORWARD		= AI_ONGROUND && (usercmd.forwardmove > 0);
 		AI_BACKWARD		= AI_ONGROUND && (usercmd.forwardmove < 0);
 		AI_STRAFE_LEFT	= AI_ONGROUND && (usercmd.rightmove < 0);
 		AI_STRAFE_RIGHT	= AI_ONGROUND && (usercmd.rightmove > 0);
+#ifdef __ANDROID__ //karin: for in smooth joystick on Android
+		}
+#endif
 	} else {
 		AI_FORWARD		= false;
 		AI_BACKWARD		= false;
@@ -4192,6 +4269,11 @@ void idPlayer::Weapon_Combat(void)
 			}
 
 			weaponCatchup = false;
+#ifdef _MOD_VIEW_BODY
+			if(viewBody.GetEntity()) {
+				viewBody.GetEntity()->UpdateWeapon();
+			}
+#endif
 		} else {
 			if (weapon.GetEntity()->IsReady()) {
 				weapon.GetEntity()->PutAway();
@@ -4212,6 +4294,11 @@ void idPlayer::Weapon_Combat(void)
 				animPrefix.Strip("weapon_");
 
 				weapon.GetEntity()->Raise();
+#ifdef _MOD_VIEW_BODY
+				if(viewBody.GetEntity()) {
+					viewBody.GetEntity()->UpdateWeapon();
+				}
+#endif
 			}
 		}
 	} else {
@@ -4398,6 +4485,11 @@ void idPlayer::UpdateWeapon(void)
 			animPrefix = spawnArgs.GetString(va("def_weapon%d", idealWeapon));
 			weapon.GetEntity()->GetWeaponDef(animPrefix, inventory.clip[ idealWeapon ]);
 			assert(weapon.GetEntity()->IsLinked());
+#ifdef _MOD_VIEW_BODY
+			if(viewBody.GetEntity()) {
+				viewBody.GetEntity()->UpdateWeapon();
+			}
+#endif
 		} else {
 			return;
 		}
@@ -4771,7 +4863,7 @@ void idPlayer::UpdateFocus(void)
 		return;
 	}
 
-	start = GetEyePosition();
+    start = GetEyePosition();
 	end = start + viewAngles.ToForward() * 80.0f;
 
 	// player identification -> names to the hud
@@ -6930,6 +7022,9 @@ void idPlayer::Think(void)
 		UpdateSpectating();
 	} else if (health > 0) {
 		UpdateWeapon();
+#ifdef _MOD_VIEW_BODY
+		UpdateBody();
+#endif
 	}
 
 	UpdateAir();
@@ -8297,12 +8392,22 @@ void idPlayer::SetInfluenceLevel(int level)
 			if (weaponEnabled && weapon.GetEntity()) {
 				weapon.GetEntity()->EnterCinematic();
 			}
+#ifdef _MOD_VIEW_BODY
+			if (viewBody.GetEntity()) {
+				viewBody.GetEntity()->EnterCinematic();
+			}
+#endif
 		} else {
 			physicsObj.SetLinearVelocity(vec3_origin);
 
 			if (weaponEnabled && weapon.GetEntity()) {
 				weapon.GetEntity()->ExitCinematic();
 			}
+#ifdef _MOD_VIEW_BODY
+			if (viewBody.GetEntity()) {
+				viewBody.GetEntity()->ExitCinematic();
+			}
+#endif
 		}
 
 		influenceActive = level;
@@ -8708,6 +8813,11 @@ void idPlayer::ClientPredictionThink(void)
 	if (!gameLocal.inCinematic && weapon.GetEntity() && (health > 0) && !(gameLocal.isMultiplayer && spectating)) {
 		UpdateWeapon();
 	}
+#ifdef _MOD_VIEW_BODY
+	if (!gameLocal.inCinematic && weapon.GetEntity() && (health > 0) && !(gameLocal.isMultiplayer && spectating)) {
+        UpdateBody();
+    }
+#endif
 
 	UpdateHud();
 
@@ -9452,3 +9562,92 @@ void idPlayer::LastWeapon( void ) {
 
     idealWeapon = previousWeapon;
 }
+
+#ifdef _MOD_VIEW_BODY
+/*
+==============
+idPlayer::SetupViewBody
+==============
+*/
+void idPlayer::SetupViewBody( void ) {
+    int						w;
+    const char				*weap;
+    const idDeclEntityDef	*decl;
+    idEntity				*spawn;
+
+    // don't setup weapons for spectators
+    if ( gameLocal.isClient || viewBody.GetEntity()/* || spectating*/ )
+    {
+        return;
+    }
+
+    idDict					args;
+
+#define VIEW_BODY_DEFAULT_CLASSNAME "player_viewbody"
+    if ( !viewBody.GetEntity() ) {
+        // setup the view model
+        idStr player_viewbody_classname;
+        spawnArgs.GetString("player_viewbody", VIEW_BODY_DEFAULT_CLASSNAME, player_viewbody_classname);
+
+        if(!player_viewbody_classname.Length())
+            player_viewbody_classname = VIEW_BODY_DEFAULT_CLASSNAME;
+
+        decl = static_cast< const idDeclEntityDef * >( declManager->FindType( DECL_ENTITYDEF, player_viewbody_classname, false ) );
+        if ( !decl ) {
+            gameLocal.Printf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
+            if( idStr::Cmp(player_viewbody_classname, VIEW_BODY_DEFAULT_CLASSNAME) )
+            {
+                player_viewbody_classname = VIEW_BODY_DEFAULT_CLASSNAME;
+                decl = static_cast< const idDeclEntityDef * >( declManager->FindType( DECL_ENTITYDEF, player_viewbody_classname, false ) );
+            }
+        }
+        if ( !decl ) {
+            gameLocal.Printf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
+            return;
+        }
+
+        args.Set( "name", va( "%s_viewBody", name.c_str() ) );
+        args.Set( "classname", decl->GetName() );
+        spawn = NULL;
+        gameLocal.SpawnEntityDef( args, &spawn );
+        if ( !spawn ) {
+            gameLocal.Printf( "idPlayer::SetupViewBody: failed to spawn viewBody\n" );
+            return;
+        }
+        viewBody = static_cast<idViewBody*>(spawn);
+        viewBody.GetEntity()->Init( this, true );
+        viewBody.GetEntity()->SetName( va("%s_viewBody", name.c_str() ) );
+        gameLocal.Printf( "idPlayer::SetupViewBody: spawn viewBody -> %s\n", viewBody.GetEntity()->GetName() );
+    }
+}
+
+/*
+===============
+idPlayer::UpdateBody
+===============
+*/
+void idPlayer::UpdateBody( void ) {
+    if ( !viewBody.GetEntity() ) {
+        return;
+    }
+
+    if ( health <= 0 ) {
+        return;
+    }
+
+    assert( !spectating );
+
+    // clients need to wait till the weapon and it's world model entity
+    // are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
+    if ( gameLocal.isClient && !viewBody.GetEntity() ) {
+        return;
+    }
+
+    // update weapon state, particles, dlights, etc
+    viewBody.GetEntity()->PresentBody( harm_ui_showViewBody.GetBool()
+#ifdef _MOD_FULL_BODY_AWARENESS
+			&& !harm_pm_fullBodyAwareness.GetBool()
+#endif
+			);
+}
+#endif

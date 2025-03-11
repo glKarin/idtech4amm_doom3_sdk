@@ -70,13 +70,6 @@ If you have questions concerning this license or the applicable additional terms
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
 bool Sys_IsMainThread();
-
-enum sysPath_t {
-    PATH_BASE,
-    PATH_CONFIG,
-    PATH_SAVE,
-    PATH_EXE
-};
 #endif
 
 // Mac OSX
@@ -199,6 +192,14 @@ enum sysPath_t {
 #define id_attribute(x)
 #endif
 
+#ifdef _SDL
+enum sysPath_t {
+    PATH_BASE,
+    PATH_CONFIG,
+    PATH_SAVE,
+    PATH_EXE
+};
+#endif
 typedef enum {
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
@@ -332,7 +333,7 @@ double			Sys_ClockTicksPerSecond(void);
 
 // returns a selection of the CPUID_* flags
 int			    Sys_GetProcessorId(void);
-const char 	*Sys_GetProcessorString(void);
+const char 	*   Sys_GetProcessorString(void);
 
 // returns true if the FPU stack is empty
 bool			Sys_FPU_StackIsEmpty(void);
@@ -571,7 +572,7 @@ void				Sys_DestroyThread(xthreadInfo &info);   // sets threadHandle back to 0
 // if index != NULL, set the index in g_threads array (use -1 for "main" thread)
 const char 		*Sys_GetThreadName(int *index = 0);
 
-#ifdef _SDL
+#if 1 //def _SDL
 const int MAX_CRITICAL_SECTIONS		= 5;
 #else
 const int MAX_CRITICAL_SECTIONS		= 4;
@@ -582,7 +583,7 @@ enum {
 	CRITICAL_SECTION_ONE,
 	CRITICAL_SECTION_TWO,
 	CRITICAL_SECTION_THREE
-#ifdef _SDL
+#if 1 //def _SDL
     , CRITICAL_SECTION_SYS
 #endif
 };
@@ -592,8 +593,11 @@ void				Sys_LeaveCriticalSection(int index = CRITICAL_SECTION_ZERO);
 
 const int MAX_TRIGGER_EVENTS		= (
         4
+#ifdef __ANDROID__
++ 3
+#endif
 #ifdef _MULTITHREAD
-+ 6
++ 4
 #endif
 #ifdef _OPENSLES
 + 2
@@ -606,8 +610,11 @@ enum {
 	TRIGGER_EVENT_TWO,
 	TRIGGER_EVENT_THREE
 	,
-	TRIGGER_EVENT_WINDOW_CREATED, // Android SurfaceView thread -> doom3/renderer thread: notify native window is set
-	TRIGGER_EVENT_WINDOW_DESTROYED, // doom3 thread/render thread -> Android SurfaceView thread: notify released OpenGL context
+#ifdef __ANDROID__
+	TRIGGER_EVENT_CONTEXT_CREATED, // doom3 thread/render thread -> Android SurfaceView thread: notify OpenGL context created
+	TRIGGER_EVENT_CONTEXT_DESTROYED, // doom3 thread/render thread -> Android SurfaceView thread: notify OpenGL context destroyed
+	TRIGGER_EVENT_WINDOW_CREATED, // Android SurfaceView thread -> doom3/renderer thread: notify native window is created
+#endif
 #ifdef _MULTITHREAD
 	TRIGGER_EVENT_RUN_BACKEND, // doom3 thread -> render thread: notify backend run render function
 	TRIGGER_EVENT_BACKEND_FINISHED, // render thread -> doom3 thread: notify frontend rendering finished
