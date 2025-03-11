@@ -248,8 +248,12 @@ if(CMAKE_MAJOR_VERSION LESS 3 OR ( CMAKE_MAJOR_VERSION EQUAL 3 AND CMAKE_MINOR_V
 endif()
 
 # libs
+if(USE_MINIZ)
+	add_definitions(-D_MINIZ)
+else()
 find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIRS})
+endif()
 
 # OpenAL using internal OpenAL-soft
 #[[find_package(OpenAL REQUIRED)
