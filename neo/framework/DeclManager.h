@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __DECLMANAGER_H__
 #define __DECLMANAGER_H__
 
+#define DECL_PROGRAM_GENERATED_DIRECTORY "_program_generated/"
+
 #ifdef _RAVEN // quake4 new decl
 class rvDeclEffect;
 class rvDeclPlayback;
@@ -494,13 +496,16 @@ class idDeclManager
 		virtual const idSoundShader 	*SoundByIndex(int index, bool forceParse = true) = 0;
 
 #ifdef _HUMANHEAD
-    //HUMANHEAD: aob
-    virtual const hhDeclBeam *		FindBeam( const char *name, bool makeDefault = true ) = 0; // HUMANHEAD CJR
-    virtual const hhDeclBeam *		BeamByIndex( int index, bool forceParse = true ) = 0; // HUMANHEAD CJR
+        //HUMANHEAD: aob
+        virtual const hhDeclBeam *		FindBeam( const char *name, bool makeDefault = true ) = 0; // HUMANHEAD CJR
+        virtual const hhDeclBeam *		BeamByIndex( int index, bool forceParse = true ) = 0; // HUMANHEAD CJR
 
-	virtual void					SetInsideLevelLoad(bool b) = 0;
-	virtual bool					GetInsideLevelLoad(void) = 0;
+        virtual void					SetInsideLevelLoad(bool b) = 0;
+        virtual bool					GetInsideLevelLoad(void) = 0;
 #endif
+
+        virtual const idDecl 	        *AddDeclDef(const char *defname, declType_t type, const idDict &args, bool force = false) = 0;
+		virtual bool					EntityDefSet(const char *name, const char *key, const char *value = NULL) = 0;
 };
 
 extern idDeclManager 		*declManager;

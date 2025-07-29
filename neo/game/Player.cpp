@@ -34,6 +34,10 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _MOD_VIEW_BODY
 #include "ViewBody.cpp"
 #endif
+#ifdef _MOD_VIEW_LIGHT
+#include "ViewLight.cpp"
+#endif
+
 /*
 ===============================================================================
 
@@ -1226,6 +1230,12 @@ idPlayer::idPlayer()
 #ifdef _MOD_VIEW_BODY
 	viewBody				= NULL;
 #endif
+#ifdef _MOD_VIEW_LIGHT
+    viewLight				= NULL;
+#endif
+#ifdef MOD_BOTS
+	bot						= NULL;
+#endif
 }
 
 /*
@@ -1365,6 +1375,9 @@ void idPlayer::Init(void)
 	SetupWeaponEntity();
 #ifdef _MOD_VIEW_BODY
     SetupViewBody();
+#endif
+#ifdef _MOD_VIEW_LIGHT
+    SetupViewLight();
 #endif
 	currentWeapon = -1;
 	previousWeapon = -1;
@@ -1514,6 +1527,9 @@ void idPlayer::Init(void)
 	}
 
 	cvarSystem->SetCVarBool("ui_chat", false);
+#ifdef MOD_BOTS
+	SpawnBot();
+#endif
 }
 
 /*
@@ -1545,7 +1561,11 @@ void idPlayer::Spawn(void)
 	physicsObj.SetSelf(this);
 	SetClipModel();
 	physicsObj.SetMass(spawnArgs.GetFloat("mass", "100"));
+#ifdef MOD_BOTS //karin: for use_combat_bbox
+	physicsObj.SetContents(CONTENTS_BODY | (use_combat_bbox?CONTENTS_SOLID:0));
+#else
 	physicsObj.SetContents(CONTENTS_BODY);
+#endif
 	physicsObj.SetClipMask(MASK_PLAYERSOLID);
 	SetPhysics(&physicsObj);
 	InitAASLocation();
@@ -1607,7 +1627,7 @@ void idPlayer::Spawn(void)
 	if(sscanf(harm_pm_fullBodyAwarenessOffset.GetString(), "%f %f %f", &offset.x, &offset.y, &offset.z) == 3)
 		fullBodyAwarenessOffset = offset;
 	else
-		gameLocal.Warning("[Harmattan]: unable read pm_fullBodyAwarenessOffset.\n");
+		gameLocal.Warning("[Harmattan]: unable read harm_pm_fullBodyAwarenessOffset.\n");
 
 	if(!harm_pm_fullBodyAwareness.GetBool() || pm_thirdPerson.GetBool())
 #endif
@@ -1747,6 +1767,24 @@ idPlayer::~idPlayer()
 	{
 		delete viewBody.GetEntity();
 		viewBody = NULL;
+	}
+#endif
+#ifdef _MOD_VIEW_LIGHT
+    if(viewLight)
+    {
+        delete viewLight;
+        viewLight = NULL;
+    }
+#endif
+#ifdef MOD_BOTS
+    if(IsBot())
+        botAi::ReleaseBotSlot(entityNumber);
+	if(bot.GetEntity())
+	{
+        gameLocal.Printf("Delete player bot: clientID=%d\n", entityNumber);
+		botAi::ReleaseBotSlot(entityNumber);
+		delete bot.GetEntity();
+		bot = NULL;
 	}
 #endif
 }
@@ -2222,7 +2260,10 @@ void idPlayer::Restore(idRestoreGame *savefile)
 	if(sscanf(harm_pm_fullBodyAwarenessOffset.GetString(), "%f %f %f", &offset.x, &offset.y, &offset.z) == 3)
 		fullBodyAwarenessOffset = offset;
 	else
-		gameLocal.Warning("[Harmattan]: unable read pm_fullBodyAwarenessOffset.\n");
+		gameLocal.Warning("[Harmattan]: unable read harm_pm_fullBodyAwarenessOffset.\n");
+#endif
+#ifdef _MOD_VIEW_LIGHT
+    SetupViewLight();
 #endif
 }
 
@@ -2242,6 +2283,12 @@ void idPlayer::PrepareForRestart(void)
 
 	// the sound world is going to be cleared, don't keep references to emitters
 	FreeSoundEmitter(false);
+#ifdef MOD_BOTS
+	if(bot.GetEntity())
+	{
+		bot.GetEntity()->PrepareForRestart();
+	}
+#endif
 }
 
 /*
@@ -2264,6 +2311,12 @@ void idPlayer::Restart(void)
 
 	useInitialSpawns = true;
 	UpdateSkinSetup(true);
+#ifdef MOD_BOTS
+	if(bot.GetEntity())
+	{
+		bot.GetEntity()->Restart();
+	}
+#endif
 }
 
 /*
@@ -2358,6 +2411,24 @@ void idPlayer::SpawnToPoint(const idVec3 &spawn_origin, const idAngles &spawn_an
 	respawning = true;
 
 	Init();
+#ifdef MOD_BOTS //karin: for use_combat_bbox
+	// Force players to use bounding boxes when in multiplayer
+	if ( gameLocal.isMultiplayer ) {
+		use_combat_bbox = gameLocal.serverInfo.GetBool("harm_si_useCombatBboxInMPGame") || spawnArgs.GetBool("use_combat_bbox");
+
+		if(use_combat_bbox)
+		{
+			// Make sure the combat model is unlinked
+			if ( combatModel ) {
+				combatModel->Unlink( );
+			}
+		}
+		else
+		{
+			SetCombatModel();
+		}
+	}
+#endif
 
 	fl.noknockback = false;
 
@@ -2875,6 +2946,11 @@ void idPlayer::EnterCinematic(void)
 		viewBody.GetEntity()->EnterCinematic();
 	}
 #endif
+#ifdef _MOD_VIEW_LIGHT
+    if (viewLight) {
+        viewLight->EnterCinematic();
+    }
+#endif
 
 	AI_FORWARD		= false;
 	AI_BACKWARD		= false;
@@ -2914,6 +2990,11 @@ void idPlayer::ExitCinematic(void)
 	if (viewBody.GetEntity()) {
 		viewBody.GetEntity()->ExitCinematic();
 	}
+#endif
+#ifdef _MOD_VIEW_LIGHT
+    if (viewLight) {
+        viewLight->ExitCinematic();
+    }
 #endif
 
 	SetState("ExitCinematic");
@@ -4271,7 +4352,7 @@ void idPlayer::Weapon_Combat(void)
 			weaponCatchup = false;
 #ifdef _MOD_VIEW_BODY
 			if(viewBody.GetEntity()) {
-				viewBody.GetEntity()->UpdateWeapon();
+				viewBody.GetEntity()->UpdateBody();
 			}
 #endif
 		} else {
@@ -4296,7 +4377,7 @@ void idPlayer::Weapon_Combat(void)
 				weapon.GetEntity()->Raise();
 #ifdef _MOD_VIEW_BODY
 				if(viewBody.GetEntity()) {
-					viewBody.GetEntity()->UpdateWeapon();
+					viewBody.GetEntity()->UpdateBody();
 				}
 #endif
 			}
@@ -4487,7 +4568,7 @@ void idPlayer::UpdateWeapon(void)
 			assert(weapon.GetEntity()->IsLinked());
 #ifdef _MOD_VIEW_BODY
 			if(viewBody.GetEntity()) {
-				viewBody.GetEntity()->UpdateWeapon();
+				viewBody.GetEntity()->UpdateBody();
 			}
 #endif
 		} else {
@@ -6245,11 +6326,24 @@ void idPlayer::PerformImpulse(int impulse)
 			break;
 		}
 
+#ifdef _DOOM3
         // RAVEN: bind "t" "_impulse51" in DoomConfig.cfg
         case 51 /* IMPULSE_51 */: {
             LastWeapon();
             break;
         }
+#endif
+
+#ifdef _MOD_VIEW_LIGHT
+        // karin: bind "f" "_impulse52" in DoomConfig.cfg
+        case 52 /* IMPULSE_52 */: {
+            if(viewLight)
+            {
+                viewLight->Toggle();
+            }
+            break;
+        }
+#endif
 	}
 }
 
@@ -6598,10 +6692,18 @@ void idPlayer::Move(void)
 		physicsObj.SetContents(CONTENTS_CORPSE | CONTENTS_MONSTERCLIP);
 		physicsObj.SetMovementType(PM_DEAD);
 	} else if (gameLocal.inCinematic || gameLocal.GetCamera() || privateCameraView || (influenceActive == INFLUENCE_LEVEL2)) {
+#ifdef MOD_BOTS //karin: for use_combat_bbox
+		physicsObj.SetContents(CONTENTS_BODY | (use_combat_bbox?CONTENTS_SOLID:0));
+#else
 		physicsObj.SetContents(CONTENTS_BODY);
+#endif
 		physicsObj.SetMovementType(PM_FREEZE);
 	} else {
+#ifdef MOD_BOTS //karin: for use_combat_bbox
+		physicsObj.SetContents(CONTENTS_BODY | (use_combat_bbox?CONTENTS_SOLID:0));
+#else
 		physicsObj.SetContents(CONTENTS_BODY);
+#endif
 		physicsObj.SetMovementType(PM_NORMAL);
 	}
 
@@ -6870,8 +6972,7 @@ void idPlayer::Think(void)
 			if(sscanf(harm_pm_fullBodyAwarenessOffset.GetString(), "%f %f %f", &offset.x, &offset.y, &offset.z) == 3)
 				fullBodyAwarenessOffset = offset;
 			else
-				gameLocal.Warning("[Harmattan]: unable read harm_pm_fullBodyAwarenessOffset.\n");
-			harm_pm_fullBodyAwarenessOffset.ClearModified();
+				gameLocal.Warning("[Harmattan]: unable read harm_pm_fullBodyAwarenessOffset.");
 		}
 	}
 #endif
@@ -7023,7 +7124,10 @@ void idPlayer::Think(void)
 	} else if (health > 0) {
 		UpdateWeapon();
 #ifdef _MOD_VIEW_BODY
-		UpdateBody();
+        UpdateViewBody();
+#endif
+#ifdef _MOD_VIEW_LIGHT
+        UpdateViewLight();
 #endif
 	}
 
@@ -8397,6 +8501,11 @@ void idPlayer::SetInfluenceLevel(int level)
 				viewBody.GetEntity()->EnterCinematic();
 			}
 #endif
+#ifdef _MOD_VIEW_LIGHT
+            if (viewLight) {
+                viewLight->EnterCinematic();
+            }
+#endif
 		} else {
 			physicsObj.SetLinearVelocity(vec3_origin);
 
@@ -8407,6 +8516,11 @@ void idPlayer::SetInfluenceLevel(int level)
 			if (viewBody.GetEntity()) {
 				viewBody.GetEntity()->ExitCinematic();
 			}
+#endif
+#ifdef _MOD_VIEW_LIGHT
+            if (viewLight) {
+                viewLight->ExitCinematic();
+            }
 #endif
 		}
 
@@ -8815,7 +8929,12 @@ void idPlayer::ClientPredictionThink(void)
 	}
 #ifdef _MOD_VIEW_BODY
 	if (!gameLocal.inCinematic && weapon.GetEntity() && (health > 0) && !(gameLocal.isMultiplayer && spectating)) {
-        UpdateBody();
+        UpdateViewBody();
+    }
+#endif
+#ifdef _MOD_VIEW_LIGHT
+    if (!gameLocal.inCinematic && weapon.GetEntity() && (health > 0) && !(gameLocal.isMultiplayer && spectating)) {
+        UpdateViewLight();
     }
 #endif
 
@@ -9503,6 +9622,11 @@ void idPlayer::UpdatePlayerIcons(void)
 	} else {
 		isLagged = false;
 	}
+#ifdef MOD_BOTS // TinMan: lag icon
+    if ( IsBot() ) {
+        isLagged = false;
+    }
+#endif
 }
 
 /*
@@ -9541,6 +9665,7 @@ bool idPlayer::NeedsIcon(void)
 	return entityNumber != gameLocal.localClientNum && (isLagged || isChatting);
 }
 
+#ifdef _DOOM3
 /*
 ===============
 idPlayer::LastWeapon
@@ -9562,6 +9687,7 @@ void idPlayer::LastWeapon( void ) {
 
     idealWeapon = previousWeapon;
 }
+#endif
 
 #ifdef _MOD_VIEW_BODY
 /*
@@ -9570,8 +9696,6 @@ idPlayer::SetupViewBody
 ==============
 */
 void idPlayer::SetupViewBody( void ) {
-    int						w;
-    const char				*weap;
     const idDeclEntityDef	*decl;
     idEntity				*spawn;
 
@@ -9584,25 +9708,33 @@ void idPlayer::SetupViewBody( void ) {
     idDict					args;
 
 #define VIEW_BODY_DEFAULT_CLASSNAME "player_viewbody"
-    if ( !viewBody.GetEntity() ) {
+    if ( viewBody.GetEntity() )
+		return;
+
         // setup the view model
         idStr player_viewbody_classname;
-        spawnArgs.GetString("player_viewbody", VIEW_BODY_DEFAULT_CLASSNAME, player_viewbody_classname);
+	if(!spawnArgs.GetString("player_viewbody", ""/*VIEW_BODY_DEFAULT_CLASSNAME*/, player_viewbody_classname))
+		return;
 
         if(!player_viewbody_classname.Length())
-            player_viewbody_classname = VIEW_BODY_DEFAULT_CLASSNAME;
+	{
+		// player_viewbody_classname = VIEW_BODY_DEFAULT_CLASSNAME;
+		return;
+	}
 
         decl = static_cast< const idDeclEntityDef * >( declManager->FindType( DECL_ENTITYDEF, player_viewbody_classname, false ) );
+	/*
         if ( !decl ) {
-            gameLocal.Printf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
+            gameLocal.DPrintf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
             if( idStr::Cmp(player_viewbody_classname, VIEW_BODY_DEFAULT_CLASSNAME) )
             {
                 player_viewbody_classname = VIEW_BODY_DEFAULT_CLASSNAME;
                 decl = static_cast< const idDeclEntityDef * >( declManager->FindType( DECL_ENTITYDEF, player_viewbody_classname, false ) );
             }
         }
+	*/
         if ( !decl ) {
-            gameLocal.Printf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
+            gameLocal.DPrintf( "entityDef not found: '%s'\n", player_viewbody_classname.c_str() );
             return;
         }
 
@@ -9611,22 +9743,21 @@ void idPlayer::SetupViewBody( void ) {
         spawn = NULL;
         gameLocal.SpawnEntityDef( args, &spawn );
         if ( !spawn ) {
-            gameLocal.Printf( "idPlayer::SetupViewBody: failed to spawn viewBody\n" );
+            gameLocal.DPrintf( "idPlayer::SetupViewBody: failed to spawn viewBody\n" );
             return;
         }
         viewBody = static_cast<idViewBody*>(spawn);
         viewBody.GetEntity()->Init( this, true );
         viewBody.GetEntity()->SetName( va("%s_viewBody", name.c_str() ) );
         gameLocal.Printf( "idPlayer::SetupViewBody: spawn viewBody -> %s\n", viewBody.GetEntity()->GetName() );
-    }
 }
 
 /*
 ===============
-idPlayer::UpdateBody
+idPlayer::UpdateViewBody
 ===============
 */
-void idPlayer::UpdateBody( void ) {
+void idPlayer::UpdateViewBody( void ) {
     if ( !viewBody.GetEntity() ) {
         return;
     }
@@ -9649,5 +9780,159 @@ void idPlayer::UpdateBody( void ) {
 			&& !harm_pm_fullBodyAwareness.GetBool()
 #endif
 			);
+}
+#endif
+
+#ifdef _MOD_VIEW_LIGHT
+/*
+==============
+idPlayer::SetupViewLight
+==============
+*/
+void idPlayer::SetupViewLight( void ) {
+    const idDecl        	*decl;
+
+    // don't setup weapons for spectators
+    if ( gameLocal.isClient || viewLight/* || spectating*/ )
+    {
+        return;
+    }
+
+    idDict					args;
+
+#define VIEW_LIGHT_DEFAULT_CLASSNAME "player_viewlight"
+
+    // setup the view light
+    idStr player_viewblight_classname;
+    spawnArgs.GetString("player_viewlight", ""/*VIEW_LIGHT_DEFAULT_CLASSNAME*/, player_viewblight_classname);
+
+    if(!player_viewblight_classname.Length())
+    {
+        player_viewblight_classname = harm_ui_viewLightShader.GetString();
+    }
+    if(!player_viewblight_classname.Length())
+    {
+        return;
+    }
+
+    bool found = false;
+    decl = declManager->FindType(DECL_ENTITYDEF, player_viewblight_classname, false);
+    if(decl)
+    {
+        const idDeclEntityDef *def = static_cast<const idDeclEntityDef *>(decl);
+        args = def->dict;
+        found = true;
+    }
+    else
+    {
+        const idMaterial *shader = declManager->FindMaterial(player_viewblight_classname, false);
+        if(shader)
+        {
+            args.Set("texture", player_viewblight_classname);
+            idVec3 v(0.0f, 0.0f, 0.0f);
+            if(sscanf(harm_ui_viewLightOffset.GetString(), "%f %f %f", &v.x, &v.y, &v.z) == 3)
+                args.Set("view_offset", harm_ui_viewLightOffset.GetString());
+            else
+                gameLocal.Warning("[Harmattan]: unable read harm_ui_viewLightOffset.");
+            if(sscanf(harm_ui_viewLightRadius.GetString(), "%f %f %f", &v.x, &v.y, &v.z) != 3)
+            {
+				gameLocal.Warning("[Harmattan]: unable read harm_ui_viewLightRadius.");
+				v.Set(1280.0f, 640.0f, 640.0f);
+			}
+			args.SetVector("light_radius", v);
+            args.Set("light_up", va("0 0 %f", v[2]));
+            args.Set("light_right", va("0 %f 0", v[1]));
+            args.Set("light_target", va("%f 0 0", v[0]));
+            args.SetBool("light_onWeapon", harm_ui_viewLightOnWeapon.GetBool());
+            found = true;
+        }
+    }
+    if(!found)
+        return;
+
+    args.Set( "name", va( "%s_viewLight", name.c_str() ) );
+    viewLight = new idViewLight;
+    viewLight->Spawn(args);
+    viewLight->Init( this );
+	if(harm_ui_viewLightType.GetInteger() == 1)
+		viewLight->SetLightType(1);
+    gameLocal.Printf( "idPlayer::SetupViewLight: spawn viewLight -> %s\n", args.GetString("name") );
+}
+
+/*
+===============
+idPlayer::UpdateViewLight
+===============
+*/
+void idPlayer::UpdateViewLight( void ) {
+    if ( !viewLight ) {
+        return;
+    }
+
+    if ( health <= 0 ) {
+        return;
+    }
+
+    assert( !spectating );
+
+    // clients need to wait till the weapon and it's world model entity
+    // are present and synchronized ( weapon.worldModel idEntityPtr to idAnimatedEntity )
+    if ( gameLocal.isClient ) {
+        return;
+    }
+
+    if(harm_ui_viewLightShader.IsModified())
+    {
+        idStr str = harm_ui_viewLightShader.GetString();
+        if(str.IsEmpty())
+        {
+            viewLight->SetOn(false);
+            return;
+        }
+        if(!viewLight->SetLight(harm_ui_viewLightShader.GetString()))
+            gameLocal.Warning("[Harmattan]: unable read harm_ui_viewLightShader.");
+    }
+    if(harm_ui_viewLightRadius.IsModified())
+    {
+        idVec3 v(0, 0, 0);
+        if(sscanf(harm_ui_viewLightRadius.GetString(), "%f %f %f", &v.x, &v.y, &v.z) == 3)
+            viewLight->SetRadius(v);
+        else
+            gameLocal.Warning("[Harmattan]: unable read harm_ui_viewLightRadius.");
+    }
+    if(harm_ui_viewLightOffset.IsModified())
+    {
+        idVec3 v(0, 0, 0);
+        if(sscanf(harm_ui_viewLightOffset.GetString(), "%f %f %f", &v.x, &v.y, &v.z) == 3)
+            viewLight->SetOffset(v);
+        else
+            gameLocal.Warning("[Harmattan]: unable read harm_ui_viewLightOffset.");
+    }
+    if(harm_ui_viewLightType.IsModified())
+    {
+        viewLight->SetLightType(harm_ui_viewLightType.GetInteger());
+    }
+    if(harm_ui_viewLightOnWeapon.IsModified())
+    {
+        viewLight->SetOnWeapon(harm_ui_viewLightOnWeapon.GetBool());
+    }
+
+    // update weapon state, particles, dlights, etc
+    viewLight->PresentLight( harm_ui_showViewLight.GetBool() );
+}
+#endif
+
+#ifdef MOD_BOTS
+void idPlayer::SetupBot(botAi *bot)
+{
+	this->bot = bot;
+}
+
+void idPlayer::SpawnBot(void)
+{
+    if(!BOT_ENABLED() || !spawnArgs.GetBool("isBot") || !botAi::PlayerHasBotSlot(entityNumber) || bot.GetEntity())
+        return;
+    //printf("Player bot spawn: %p %p\n", this, bot.GetEntity());
+	bot = botAi::SpawnBot(this);
 }
 #endif

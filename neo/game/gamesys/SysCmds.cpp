@@ -151,7 +151,10 @@ void Cmd_ReloadScript_f(const idCmdArgs &args)
 	gameLocal.MapShutdown();
 
 	// recompile the scripts
-	gameLocal.program.Startup(SCRIPT_DEFAULT);
+    gameLocal.program.Startup(SCRIPT_DEFAULT);
+#if defined(MOD_BOTS) && defined(_MOD_BOTS_ASSETS)
+    botAi::CompileBotScript(true);
+#endif
 
 	// error out so that the user can rerun the scripts
 	gameLocal.Error("Exiting map to reload scripts");
@@ -657,7 +660,7 @@ Cmd_AddChatLine_f
 */
 static void Cmd_AddChatLine_f(const idCmdArgs &args)
 {
-	gameLocal.mpGame.AddChatLine(args.Argv(1));
+	gameLocal.mpGame.AddChatLine("%s", args.Argv(1));
 }
 
 /*
@@ -1319,7 +1322,7 @@ static void PrintFloat(float f)
 	}
 
 	buf[i] = '\0';
-	gameLocal.Printf(buf);
+	gameLocal.Printf("%s", buf);
 }
 
 /*
@@ -2588,6 +2591,22 @@ void idGameLocal::InitConsoleCommands(void)
 	// localization help commands
 	cmdSystem->AddCommand("nextGUI",				Cmd_NextGUI_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"teleport the player to the next func_static with a gui");
 	cmdSystem->AddCommand("testid",				Cmd_TestId_f,				CMD_FL_GAME|CMD_FL_CHEAT,	"output the string for the specified id.");
+
+#ifdef MOD_BOTS // TinMan: Bot console commmands
+    cmdSystem->AddCommand( "addBot",				botAi::Addbot_f,			CMD_FL_GAME,				"adds a new bot", botAi::ArgCompletion_addBot );
+    cmdSystem->AddCommand( "removeBot",				botAi::Removebot_f,			CMD_FL_GAME,				"removes bot specified by id (1,31)", botAi::ArgCompletion_botSlots /*, idCmdSystem::ArgCompletion_Integer<0,( botAi::BOT_MAX_BOTS - 1 )>*/ );
+
+    cmdSystem->AddCommand("addBots", botAi::Cmd_AddBots_f, CMD_FL_GAME, "add multiplayer bots batch", botAi::ArgCompletion_addBot);
+    cmdSystem->AddCommand("removeBots", botAi::Cmd_RemoveBots_f, CMD_FL_GAME, "disconnect multi bots by client ID", botAi::ArgCompletion_botSlots);
+    cmdSystem->AddCommand("fillBots", botAi::Cmd_FillBots_f, CMD_FL_GAME, "fill bots to maximum of server");
+    cmdSystem->AddCommand("appendBots", botAi::Cmd_AppendBots_f, CMD_FL_GAME, "append more bots(over maximum of server)");
+    cmdSystem->AddCommand("cleanBots", botAi::Cmd_CleanBots_f, CMD_FL_GAME, "disconnect all bots");
+    cmdSystem->AddCommand("truncBots", botAi::Cmd_TruncBots_f, CMD_FL_GAME, "disconnect last bots");
+    cmdSystem->AddCommand("sabot", botAi::Cmd_BotInfo_f, CMD_FL_GAME, "debug SaBot info");
+    cmdSystem->AddCommand("botLevel", botAi::Cmd_SetupBotLevel_f, CMD_FL_GAME, "setup all bot level", botAi::ArgCompletion_botLevel);
+    cmdSystem->AddCommand("botWeapons", botAi::Cmd_SetupBotWeapons_f, CMD_FL_GAME, "setup all bot initial weapons", botAi::ArgCompletion_botWeapons);
+    cmdSystem->AddCommand("botAmmo", botAi::Cmd_SetupBotAmmo_f, CMD_FL_GAME, "setup all bot initial weapons ammo");
+#endif
 }
 
 /*

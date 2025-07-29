@@ -85,15 +85,16 @@ typedef struct glconfig_s {
 
 	bool				isInitialized;
 
-	bool framebufferObjectAvailable;
-	int maxRenderbufferSize;
-	int maxColorAttachments;
+	bool                framebufferObjectAvailable;
+	int                 maxRenderbufferSize;
+    int                 maxColorAttachments;
 
-	bool depthTextureAvailable;
-	bool depthTextureCubeMapAvailable;
-	bool depth24Available;
-	bool gl_FragDepthAvailable;
-	int multiSamples;
+	bool                depthTextureAvailable;
+	bool                depthTextureCubeMapAvailable;
+	bool                depth24Available;
+	bool                gl_FragDepthAvailable;
+	int                 multiSamples;
+	bool				debugOutput;
 } glconfig_t;
 
 
@@ -124,6 +125,13 @@ typedef struct {
 	glyphInfo_t			glyphs [GLYPHS_PER_FONT];
 	float				glyphScale;
 	char				name[64];
+
+#ifdef _WCHAR_LANG
+    int                 numIndexes;
+    int					*indexes;
+    int                 numGlyphs;
+    glyphInfo_t			*glyphsTable;
+#endif
 } fontInfo_t;
 
 typedef struct {
@@ -140,6 +148,18 @@ typedef struct {
 	int					maxWidthLarge;
 	char				name[64];
 } fontInfoEx_t;
+
+#ifdef _WCHAR_LANG
+#define HARM_NEW_FONT_MAGIC ((unsigned)((unsigned)'i' << (unsigned)24 | (unsigned)'d' << (unsigned)16 | (unsigned)'t' << (unsigned)8 | (unsigned)'f'))
+#define HARM_NEW_FONT_VERSION 0x00010001
+
+const glyphInfo_t * R_Font_GetGlyphInfo(const fontInfo_t *info, uint32_t charIndex);
+float R_Font_GetCharWidth(const fontInfo_t *info, uint32_t charCode, float scale = 1.0f);
+float R_Font_GetCharHeight(const fontInfo_t *info, uint32_t charCode, float scale = 1.0f);
+
+void R_Font_FreeFontInfo(fontInfo_t *info);
+void R_Font_FreeFontInfoEx(fontInfoEx_t *ex);
+#endif
 
 const int SMALLCHAR_WIDTH		= 8;
 const int SMALLCHAR_HEIGHT		= 16;
@@ -221,16 +241,16 @@ class idRenderSystem
 		virtual void			DrawBigStringExt(int x, int y, const char *string, const idVec4 &setColor, bool forceColor, const idMaterial *material) = 0;
 
 #ifdef _HUMANHEAD
-	virtual void			SetEntireSceneMaterial(idMaterial* material) = 0; // HUMANHEAD CJR
-	virtual bool			IsScopeView() = 0;// HUMANHEAD CJR
-	virtual void			SetScopeView(bool view) = 0; // HUMANHEAD CJR
-	virtual bool			IsShuttleView() = 0;// HUMANHEAD pdm
-	virtual void			SetShuttleView(bool view) = 0;// HUMANHEAD pdm
-	virtual bool			SupportsFragmentPrograms(void) = 0; // HUMANHEAD CJR
-	virtual int				VideoCardNumber(void) = 0; // HUMANHEAD CJR
+        virtual void			SetEntireSceneMaterial(idMaterial* material) = 0; // HUMANHEAD CJR
+        virtual bool			IsScopeView() = 0;// HUMANHEAD CJR
+        virtual void			SetScopeView(bool view) = 0; // HUMANHEAD CJR
+        virtual bool			IsShuttleView() = 0;// HUMANHEAD pdm
+        virtual void			SetShuttleView(bool view) = 0;// HUMANHEAD pdm
+        virtual bool			SupportsFragmentPrograms(void) = 0; // HUMANHEAD CJR
+        virtual int				VideoCardNumber(void) = 0; // HUMANHEAD CJR
 												
 #if _HH_RENDERDEMO_HACKS //HUMANHEAD rww
-	virtual void			LogViewRender(const struct renderView_s *view) = 0;
+	    virtual void			LogViewRender(const struct renderView_s *view) = 0;
 #endif //HUMANHEAD END
 #endif
 
