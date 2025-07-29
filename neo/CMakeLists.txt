@@ -550,7 +550,6 @@ else() #TODO linux
 		set(sys_libs ${sys_libs} X11 EGL)
 	else() # SDL2
 	    if(USE_LOCAL_SDL)
-	        add_subdirectory(externlibs/SDL2)
             set(LINUX_SDL TRUE)
             message(STATUS "use local SDL2")
             include_directories(externlibs/SDL2/include)
