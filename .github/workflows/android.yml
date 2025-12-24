@@ -4,12 +4,12 @@ name: Android apk CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "bloodmod" ]
     paths:
       - '.github/workflows/android.yml'
       - '.github/workflows/android.changelog'
   pull_request:
-    branches: [ "master" ]
+    branches: [ "bloodmod" ]
     paths:
       - '.github/workflows/android_release.yml'
       - '.github/workflows/android.changelog'

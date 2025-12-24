@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,21 +26,18 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
-#pragma hdrstop
+#include "sys/platform.h"
+#include "framework/Common.h"
+#include "tools/compilers/aas/AASFileManager.h"
 
-#include "AAS_local.h"
-#ifdef MOD_BOTS // cusTom3 - aas extensions - define BotAASBuild for use
-#include "../bots/BotAASBuild.h"
-#endif
+#include "ai/AAS_local.h"
 
 /*
 ============
 idAAS::Alloc
 ============
 */
-idAAS *idAAS::Alloc(void)
-{
+idAAS *idAAS::Alloc( void ) {
 	return new idAASLocal;
 }
 
@@ -49,8 +46,7 @@ idAAS *idAAS::Alloc(void)
 idAAS::idAAS
 ============
 */
-idAAS::~idAAS(void)
-{
+idAAS::~idAAS( void ) {
 }
 
 /*
@@ -58,12 +54,8 @@ idAAS::~idAAS(void)
 idAASLocal::idAASLocal
 ============
 */
-idAASLocal::idAASLocal(void)
-{
+idAASLocal::idAASLocal( void ) {
 	file = NULL;
-#ifdef MOD_BOTS	// cusTom3 - aas extensions - what a mess, this should probably be in Init - TODO: look at it later
-	botAASBuilder = NULL;
-#endif
 }
 
 /*
@@ -71,12 +63,8 @@ idAASLocal::idAASLocal(void)
 idAASLocal::~idAASLocal
 ============
 */
-idAASLocal::~idAASLocal(void)
-{
+idAASLocal::~idAASLocal( void ) {
 	Shutdown();
-#ifdef MOD_BOTS	// cusTom3 - aas extensions - what a mess, this should probably be in shut down, TODO: look at it later
-    delete botAASBuilder;
-#endif
 }
 
 /*
@@ -84,38 +72,21 @@ idAASLocal::~idAASLocal(void)
 idAASLocal::Init
 ============
 */
-bool idAASLocal::Init(const idStr &mapName, unsigned int mapFileCRC)
-{
-	if (file && mapName.Icmp(file->GetName()) == 0 && mapFileCRC == file->GetCRC()) {
-		common->Printf("Keeping %s\n", file->GetName());
+bool idAASLocal::Init( const idStr &mapName, unsigned int mapFileCRC ) {
+	if ( file && mapName.Icmp( file->GetName() ) == 0 && mapFileCRC == file->GetCRC() ) {
+		common->Printf( "Keeping %s\n", file->GetName() );
 		RemoveAllObstacles();
-	} else {
+	}
+	else {
 		Shutdown();
 
-		file = AASFileManager->LoadAAS(mapName, mapFileCRC);
-
-		if (!file) {
-			common->DWarning("Couldn't load AAS file: '%s'", mapName.c_str());
+		file = AASFileManager->LoadAAS( mapName, mapFileCRC );
+		if ( !file ) {
+			common->DWarning( "Couldn't load AAS file: '%s'", mapName.c_str() );
 			return false;
 		}
-
-#ifdef MOD_BOTS // cusTom3 - aas extensions
-		if(BOT_ENABLED()) {
-			// TODO: don't need a builder unless it is a 48, but Init's for now, look at later
-			// if class changing is added models could change, would have to handle that here
-            idStr ext;
-            mapName.ExtractFileExtension(ext);
-			if (ext.Find( BOT_AAS, false ) >= 0) {
-                if(!botAASBuilder)
-                    botAASBuilder = new BotAASBuild();
-                botAASBuilder->Init( this );
-				botAASBuilder->AddReachabilities();
-			}
-        }
-#endif // TODO: save the new information out to a file so it doesn't have to be processed each map load
 		SetupRouting();
 	}
-
 	return true;
 }
 
@@ -124,17 +95,11 @@ bool idAASLocal::Init(const idStr &mapName, unsigned int mapFileCRC)
 idAASLocal::Shutdown
 ============
 */
-void idAASLocal::Shutdown(void)
-{
-	if (file) {
-#ifdef MOD_BOTS // cusTom3 - aas extensions
-		if(botAASBuilder) {
-            botAASBuilder->FreeAAS();
-		}
-#endif // TODO: save the new information out to a file so it doesn't have to be processed each map load
+void idAASLocal::Shutdown( void ) {
+	if ( file ) {
 		ShutdownRouting();
 		RemoveAllObstacles();
-		AASFileManager->FreeAAS(file);
+		AASFileManager->FreeAAS( file );
 		file = NULL;
 	}
 }
@@ -144,13 +109,11 @@ void idAASLocal::Shutdown(void)
 idAASLocal::Stats
 ============
 */
-void idAASLocal::Stats(void) const
-{
-	if (!file) {
+void idAASLocal::Stats( void ) const {
+	if ( !file ) {
 		return;
 	}
-
-	common->Printf("[%s]\n", file->GetName());
+	common->Printf( "[%s]\n", file->GetName() );
 	file->PrintInfo();
 	RoutingStats();
 }
@@ -160,12 +123,10 @@ void idAASLocal::Stats(void) const
 idAASLocal::GetSettings
 ============
 */
-const idAASSettings *idAASLocal::GetSettings(void) const
-{
-	if (!file) {
+const idAASSettings *idAASLocal::GetSettings( void ) const {
+	if ( !file ) {
 		return NULL;
 	}
-
 	return &file->GetSettings();
 }
 
@@ -174,13 +135,11 @@ const idAASSettings *idAASLocal::GetSettings(void) const
 idAASLocal::PointAreaNum
 ============
 */
-int idAASLocal::PointAreaNum(const idVec3 &origin) const
-{
-	if (!file) {
+int idAASLocal::PointAreaNum( const idVec3 &origin ) const {
+	if ( !file ) {
 		return 0;
 	}
-
-	return file->PointAreaNum(origin);
+	return file->PointAreaNum( origin );
 }
 
 /*
@@ -188,13 +147,12 @@ int idAASLocal::PointAreaNum(const idVec3 &origin) const
 idAASLocal::PointReachableAreaNum
 ============
 */
-int idAASLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &searchBounds, const int areaFlags) const
-{
-	if (!file) {
+int idAASLocal::PointReachableAreaNum( const idVec3 &origin, const idBounds &searchBounds, const int areaFlags ) const {
+	if ( !file ) {
 		return 0;
 	}
 
-	return file->PointReachableAreaNum(origin, searchBounds, areaFlags, TFL_INVALID);
+	return file->PointReachableAreaNum( origin, searchBounds, areaFlags, TFL_INVALID );
 }
 
 /*
@@ -202,13 +160,12 @@ int idAASLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &sear
 idAASLocal::BoundsReachableAreaNum
 ============
 */
-int idAASLocal::BoundsReachableAreaNum(const idBounds &bounds, const int areaFlags) const
-{
-	if (!file) {
+int idAASLocal::BoundsReachableAreaNum( const idBounds &bounds, const int areaFlags ) const {
+	if ( !file ) {
 		return 0;
 	}
 
-	return file->BoundsReachableAreaNum(bounds, areaFlags, TFL_INVALID);
+	return file->BoundsReachableAreaNum( bounds, areaFlags, TFL_INVALID );
 }
 
 /*
@@ -216,13 +173,11 @@ int idAASLocal::BoundsReachableAreaNum(const idBounds &bounds, const int areaFla
 idAASLocal::PushPointIntoAreaNum
 ============
 */
-void idAASLocal::PushPointIntoAreaNum(int areaNum, idVec3 &origin) const
-{
-	if (!file) {
+void idAASLocal::PushPointIntoAreaNum( int areaNum, idVec3 &origin ) const {
+	if ( !file ) {
 		return;
 	}
-
-	file->PushPointIntoAreaNum(areaNum, origin);
+	file->PushPointIntoAreaNum( areaNum, origin );
 }
 
 /*
@@ -230,13 +185,11 @@ void idAASLocal::PushPointIntoAreaNum(int areaNum, idVec3 &origin) const
 idAASLocal::AreaCenter
 ============
 */
-idVec3 idAASLocal::AreaCenter(int areaNum) const
-{
-	if (!file) {
+idVec3 idAASLocal::AreaCenter( int areaNum ) const {
+	if ( !file ) {
 		return vec3_origin;
 	}
-
-	return file->GetArea(areaNum).center;
+	return file->GetArea( areaNum ).center;
 }
 
 /*
@@ -244,13 +197,11 @@ idVec3 idAASLocal::AreaCenter(int areaNum) const
 idAASLocal::AreaFlags
 ============
 */
-int idAASLocal::AreaFlags(int areaNum) const
-{
-	if (!file) {
+int idAASLocal::AreaFlags( int areaNum ) const {
+	if ( !file ) {
 		return 0;
 	}
-
-	return file->GetArea(areaNum).flags;
+	return file->GetArea( areaNum ).flags;
 }
 
 /*
@@ -258,13 +209,11 @@ int idAASLocal::AreaFlags(int areaNum) const
 idAASLocal::AreaTravelFlags
 ============
 */
-int idAASLocal::AreaTravelFlags(int areaNum) const
-{
-	if (!file) {
+int idAASLocal::AreaTravelFlags( int areaNum ) const {
+	if ( !file ) {
 		return 0;
 	}
-
-	return file->GetArea(areaNum).travelFlags;
+	return file->GetArea( areaNum ).travelFlags;
 }
 
 /*
@@ -272,16 +221,14 @@ int idAASLocal::AreaTravelFlags(int areaNum) const
 idAASLocal::Trace
 ============
 */
-bool idAASLocal::Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end) const
-{
-	if (!file) {
+bool idAASLocal::Trace( aasTrace_t &trace, const idVec3 &start, const idVec3 &end ) const {
+	if ( !file ) {
 		trace.fraction = 0.0f;
 		trace.lastAreaNum = 0;
 		trace.numAreas = 0;
 		return true;
 	}
-
-	return file->Trace(trace, start, end);
+	return file->Trace( trace, start, end );
 }
 
 /*
@@ -289,14 +236,12 @@ bool idAASLocal::Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end
 idAASLocal::GetPlane
 ============
 */
-const idPlane &idAASLocal::GetPlane(int planeNum) const
-{
-	if (!file) {
+const idPlane &idAASLocal::GetPlane( int planeNum ) const {
+	if ( !file ) {
 		static idPlane dummy;
 		return dummy;
 	}
-
-	return file->GetPlane(planeNum);
+	return file->GetPlane( planeNum );
 }
 
 /*
@@ -304,17 +249,13 @@ const idPlane &idAASLocal::GetPlane(int planeNum) const
 idAASLocal::GetEdgeVertexNumbers
 ============
 */
-void idAASLocal::GetEdgeVertexNumbers(int edgeNum, int verts[2]) const
-{
-	if (!file) {
+void idAASLocal::GetEdgeVertexNumbers( int edgeNum, int verts[2] ) const {
+	if ( !file ) {
 		verts[0] = verts[1] = 0;
 		return;
 	}
-
-	const int *v = file->GetEdge(abs(edgeNum)).vertexNum;
-
+	const int *v = file->GetEdge( abs(edgeNum) ).vertexNum;
 	verts[0] = v[INTSIGNBITSET(edgeNum)];
-
 	verts[1] = v[INTSIGNBITNOTSET(edgeNum)];
 }
 
@@ -323,17 +264,13 @@ void idAASLocal::GetEdgeVertexNumbers(int edgeNum, int verts[2]) const
 idAASLocal::GetEdge
 ============
 */
-void idAASLocal::GetEdge(int edgeNum, idVec3 &start, idVec3 &end) const
-{
-	if (!file) {
+void idAASLocal::GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const {
+	if ( !file ) {
 		start.Zero();
 		end.Zero();
 		return;
 	}
-
-	const int *v = file->GetEdge(abs(edgeNum)).vertexNum;
-
-	start = file->GetVertex(v[INTSIGNBITSET(edgeNum)]);
-
-	end = file->GetVertex(v[INTSIGNBITNOTSET(edgeNum)]);
+	const int *v = file->GetEdge( abs(edgeNum) ).vertexNum;
+	start = file->GetVertex( v[INTSIGNBITSET(edgeNum)] );
+	end = file->GetVertex( v[INTSIGNBITNOTSET(edgeNum)] );
 }

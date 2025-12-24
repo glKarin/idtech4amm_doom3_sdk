@@ -4,7 +4,7 @@
 Doom 3 GPL Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
 
-This file is part of the Doom 3 GPL Source Code (?Doom 3 Source Code?).
+This file is part of the Doom 3 GPL Source Code ("Doom 3 Source Code").
 
 Doom 3 Source Code is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifndef __SYS_CVAR_H__
 #define __SYS_CVAR_H__
+
+#include "framework/CVarSystem.h"
 
 extern idCVar	developer;
 
@@ -248,32 +250,13 @@ extern idCVar	si_spectators;
 extern idCVar	net_clientSelfSmoothing;
 extern idCVar	net_clientLagOMeter;
 
+// darknar add
+extern idCVar   g_gib_power;
+extern idCVar   g_gib_shadows;
+extern idCVar   g_gib_remove_time;
+
 extern const char *si_gameTypeArgs[];
 
 extern const char *ui_skinArgs[];
 
-#ifdef _MOD_FULL_BODY_AWARENESS
-extern idCVar harm_pm_fullBodyAwareness;
-extern idCVar harm_pm_fullBodyAwarenessOffset;
-extern idCVar harm_pm_fullBodyAwarenessHeadJoint;
-extern idCVar harm_pm_fullBodyAwarenessFixed;
-extern idCVar harm_pm_fullBodyAwarenessHeadVisible;
-#endif
-#ifdef _MOD_VIEW_BODY
-extern idCVar harm_ui_showViewBody;
-#endif
-#ifdef _MOD_VIEW_LIGHT
-extern idCVar harm_ui_showViewLight;
-extern idCVar harm_ui_viewLightShader;
-extern idCVar harm_ui_viewLightRadius;
-extern idCVar harm_ui_viewLightOffset;
-extern idCVar harm_ui_viewLightType;
-extern idCVar harm_ui_viewLightOnWeapon;
-#endif
-#ifdef _DOOM3 //karin: for use_combat_bbox
-extern idCVar harm_si_useCombatBboxInMPGame;
-#endif
-#ifdef __ANDROID__ //karin: re-normalize player movement direction. only for DIII4A smooth onscreen joystick control
-extern idCVar harm_g_normalizeMovementDirection;
-#endif
 #endif /* !__SYS_CVAR_H__ */

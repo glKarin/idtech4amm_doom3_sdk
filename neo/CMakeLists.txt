@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR) # 2.6
 
 project(doom3sdk)
 
+option(IS_DHEWM3    	"Is Dhewm3 mod"      	ON)
+
 set(IDTECH4AMM_ENGINE_PATCH 70)
 set(IDTECH4AMM_ENGINE_VERSION "1.1.0harmattan${IDTECH4AMM_ENGINE_PATCH}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -31,6 +33,9 @@ option(USE_SYSTEM_CURL        	"use system curl library"      			OFF)
 option(USE_SYSTEM_FREETYPE    	"use system freetype2 library"      	OFF)
 
 set(CORE_DEFINES "-D__DOOM_DLL__ -D_SDK")
+if(IS_DHEWM3)
+	set(CORE_DEFINES "${CORE_DEFINES} -D_DHEWM3")
+endif()
 
 add_definitions(-D_IDTECH4AMM_PATCH=${IDTECH4AMM_ENGINE_PATCH})
 add_definitions(-D_IDTECH4AMM_VERSION="${IDTECH4AMM_ENGINE_VERSION}")
@@ -144,7 +149,7 @@ option(SUPPORT_FBX							"Support Autodesk fbx animation/static model"								ON
 
 # DOOM3 cores
 option(BASE									"Build the base game code" 													ON)
-option(D3XP									"Build the d3xp game code" 													ON)
+option(D3XP									"Build the d3xp game code" 													OFF)
 option(D3_MOD_FULL_BODY_AWARENESS			"Build doom3 full body awareness mod support" 								ON)
 option(D3_MOD_BOTS							"Build doom3 bots mod support" 												ON)
 
@@ -965,7 +970,7 @@ if(BASE)
 		set(d3_compile_definitions "${d3_compile_definitions};MOD_BOTS;_MOD_BOTS_ASSETS")
 		message(STATUS "Build doom3 bots mod support")
 	endif()
-	set(d3_compile_definitions "${d3_compile_definitions};_DOOM3")
+	set(d3_compile_definitions "${d3_compile_definitions};_DOOM3;_BLOODMOD")
 	#set(d3_compile_definitions "${d3_compile_definitions};_MOD_ANIM_MODEL_ROTATION")
 	set_target_properties(game PROPERTIES COMPILE_DEFINITIONS "${d3_compile_definitions}")
 	target_include_directories(game PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/game")
@@ -978,105 +983,6 @@ if(BASE)
 
 	if(NOT APPLE AND NOT WIN32 AND NOT ANDROID)
 		install(TARGETS game
-				RUNTIME DESTINATION "${bindir}"
-				LIBRARY DESTINATION "${libdir}"
-				ARCHIVE DESTINATION "${libdir}"
-				)
-	endif()
-endif()
-
-if(D3XP)
-	# d3xp
-	set(src_d3xp
-			AF.cpp
-			AFEntity.cpp
-			Actor.cpp
-			Camera.cpp
-			Entity.cpp
-			BrittleFracture.cpp
-			Fx.cpp
-			GameEdit.cpp
-			Game_local.cpp
-			Game_network.cpp
-			Item.cpp
-			IK.cpp
-			Light.cpp
-			Misc.cpp
-			Mover.cpp
-			Moveable.cpp
-			MultiplayerGame.cpp
-			Player.cpp
-			PlayerIcon.cpp
-			PlayerView.cpp
-			Projectile.cpp
-			Pvs.cpp
-			SecurityCamera.cpp
-			SmokeParticles.cpp
-			Sound.cpp
-			Target.cpp
-			Trigger.cpp
-			Weapon.cpp
-			WorldSpawn.cpp
-			ai/AAS.cpp
-			ai/AAS_debug.cpp
-			ai/AAS_pathing.cpp
-			ai/AAS_routing.cpp
-			ai/AI.cpp
-			ai/AI_events.cpp
-			ai/AI_pathing.cpp
-			ai/AI_Vagary.cpp
-			gamesys/DebugGraph.cpp
-			gamesys/Class.cpp
-			gamesys/Event.cpp
-			gamesys/SaveGame.cpp
-			gamesys/SysCmds.cpp
-			gamesys/SysCvar.cpp
-			gamesys/TypeInfo.cpp
-			anim/Anim.cpp
-			anim/Anim_Blend.cpp
-			anim/Anim_Import.cpp
-			anim/Anim_Testmodel.cpp
-			script/Script_Compiler.cpp
-			script/Script_Interpreter.cpp
-			script/Script_Program.cpp
-			script/Script_Thread.cpp
-			physics/Clip.cpp
-			physics/Force.cpp
-			physics/Force_Constant.cpp
-			physics/Force_Drag.cpp
-			physics/Force_Field.cpp
-			physics/Force_Spring.cpp
-			physics/Physics.cpp
-			physics/Physics_AF.cpp
-			physics/Physics_Actor.cpp
-			physics/Physics_Base.cpp
-			physics/Physics_Monster.cpp
-			physics/Physics_Parametric.cpp
-			physics/Physics_Player.cpp
-			physics/Physics_RigidBody.cpp
-			physics/Physics_Static.cpp
-			physics/Physics_StaticMulti.cpp
-			physics/Push.cpp
-			Grabber.cpp
-			physics/Force_Grab.cpp
-			)
-	set_src_dir(src_d3xp "d3xp" ${src_d3xp})
-	add_globbed_headers(src_d3xp "d3xp")
-
-	add_library(d3xp SHARED ${src_d3xp})
-	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX neo FILES ${src_d3xp})
-	#set_target_properties(d3xp PROPERTIES PREFIX "")
-	set_target_properties(d3xp PROPERTIES COMPILE_DEFINITIONS "GAME_DLL;_D3XP;CTF")
-	target_include_directories(d3xp PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/d3xp")
-	set_target_properties(d3xp PROPERTIES LINK_FLAGS "${ldflags}")
-	set_target_properties(d3xp PROPERTIES INSTALL_NAME_DIR "@executable_path")
-	target_link_libraries(d3xp idlib)
-	if(NOT MSVC)
-		target_compile_options(d3xp PRIVATE -Wno-format-security)
-	endif()
-
-	if(NOT APPLE AND NOT WIN32 AND NOT ANDROID)
-		install(TARGETS d3xp
 				RUNTIME DESTINATION "${bindir}"
 				LIBRARY DESTINATION "${libdir}"
 				ARCHIVE DESTINATION "${libdir}"
