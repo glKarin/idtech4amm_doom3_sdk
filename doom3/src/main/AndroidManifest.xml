@@ -80,7 +80,7 @@
             android:name=".Main">
             <meta-data android:name="COMMAND" android:value=""/> <!-- other commands -->
             <meta-data android:name="com_allowConsole" android:value="1"/> <!-- property parameter -->
-            <meta-data android:name="disconnect" android:value=""/> <!-- command parameter: value is empty -->
+            <meta-data android:name="disconnect" android:value=""/> <!-- command parameter: value must be empty -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
