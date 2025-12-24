@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR) # 2.6
 
 project(doom3sdk)
 
+option(IS_DHEWM3    	"Is Dhewm3 mod"      	OFF)
+
 set(IDTECH4AMM_ENGINE_PATCH 70)
 set(IDTECH4AMM_ENGINE_VERSION "1.1.0harmattan${IDTECH4AMM_ENGINE_PATCH}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -31,6 +33,9 @@ option(USE_SYSTEM_CURL        	"use system curl library"      			OFF)
 option(USE_SYSTEM_FREETYPE    	"use system freetype2 library"      	OFF)
 
 set(CORE_DEFINES "-D__DOOM_DLL__ -D_SDK")
+if(IS_DHEWM3)
+	set(CORE_DEFINES "${CORE_DEFINES} -D_DHEWM3")
+endif()
 
 add_definitions(-D_IDTECH4AMM_PATCH=${IDTECH4AMM_ENGINE_PATCH})
 add_definitions(-D_IDTECH4AMM_VERSION="${IDTECH4AMM_ENGINE_VERSION}")
