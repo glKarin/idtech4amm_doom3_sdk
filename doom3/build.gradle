@@ -1,0 +1,161 @@
+apply plugin: 'com.android.application'
+
+String[] ABIFILTERS = [
+	"arm64-v8a",
+    "armeabi-v7a",
+    /*, "armeabi", "x86", "x86_64"*/
+]
+
+String PRODUCT_FLAVOR = "github" // github fdroid
+
+String[] CMAKE_ARGUMENTS = [
+        "-DANDROID_ARM_NEON=TRUE", "-DANDROID_TOOLCHAIN=clang", "-DANDROID_PLATFORM=android-21", "-DDIII4A_PRODUCT_FLAVOR=" + PRODUCT_FLAVOR/*, "-DANDROID_STL=c++_shared"*/
+]
+
+// filter ABI
+def abifilters = ABIFILTERS
+if(project.properties.abifilters != null && !project.properties.abifilters.isEmpty()) {
+    println "[Q3E]: Using gradle.properties ABI filters = ${project.properties.abifilters}"
+    abifilters = project.properties.abifilters.split(",")
+} else {
+    println "[Q3E]: Using built-in ABI filters = ${Arrays.toString(abifilters)}"
+}
+println "[Q3E]: Build arch = " + Arrays.toString(abifilters)
+
+// CMake options
+def cmake_arguments = CMAKE_ARGUMENTS
+if(project.properties.cmake_options != null && !project.properties.cmake_options.isEmpty()) {
+    println "[Q3E]: Add gradle.properties CMake options = ${project.properties.cmake_options}"
+    def add_options = project.properties.cmake_options.split(",")
+    cmake_arguments = new String[CMAKE_ARGUMENTS.length + add_options.length]
+    System.arraycopy(CMAKE_ARGUMENTS, 0, cmake_arguments, 0, CMAKE_ARGUMENTS.length)
+    System.arraycopy(add_options, 0, cmake_arguments, CMAKE_ARGUMENTS.length, add_options.length)
+}
+println "[Q3E]: CMake arguments = " + Arrays.toString(cmake_arguments)
+
+android {
+    compileSdk project.properties.compileSdkVersion.toInteger()
+    buildToolsVersion project.properties.buildToolsVersion
+    ndkVersion project.properties.ndkVersion
+    //compileOptions.encoding "gbk"
+
+    defaultConfig {
+        applicationId "com.karin.doom3"
+        minSdkVersion project.properties.minSdkVersion.toInteger()
+        targetSdkVersion project.properties.targetSdkVersion.toInteger()
+        versionCode 13113041
+        versionName '1.3.1.1304.1' // {DOOM3's ENGINE_VERSION}.{BUILD_NUMBER}.{My Version}
+        minSdkVersion project.properties.minSdkVersion.toInteger()
+        targetSdkVersion project.properties.targetSdkVersion.toInteger()
+
+/*        ndk {
+            moduleName "q3eloader"
+            abiFilters abifilters
+        }*/
+        externalNativeBuild {
+            cmake {
+                abiFilters abifilters
+                arguments cmake_arguments
+                cppFlags "-fexceptions", "-frtti"
+            }
+        }
+
+        buildConfigField "String", "PRODUCT_FLAVOR", "\"" + PRODUCT_FLAVOR + "\""
+    }
+
+    signingConfigs {
+        debug {
+            v1SigningEnabled true
+            v2SigningEnabled true
+            storeFile file(project.properties.storeFile)
+            storePassword project.properties.storePassword
+            keyAlias project.properties.keyAlias
+            keyPassword project.properties.keyPassword
+        }
+        release {
+            v1SigningEnabled true
+            v2SigningEnabled true
+            storeFile file(project.properties.storeFile)
+            storePassword project.properties.storePassword
+            keyAlias project.properties.keyAlias
+            keyPassword project.properties.keyPassword
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            signingConfig signingConfigs.release
+        }
+    }
+    sourceSets {
+        main {
+            jniLibs.srcDirs=['libs']
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "../neo/CMakeLists.txt"
+        }
+    }
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+//    packagingOptions {
+//        doNotStrip "*/armeabi-v7a/*.so"
+//        doNotStrip "*/arm64-v8a/*.so"
+//    }
+    buildFeatures {
+        prefab true
+    }
+    packagingOptions {
+        // remove unused ffmpeg libraries
+        // remove all x86/x86-64 libraries
+        exclude "lib/x86/**"
+        exclude "lib/x86_64/**"
+        // remove all armv7 neon libraries
+        exclude "lib/armeabi-v7a/*_neon.so"
+
+        // remove system libraries
+        exclude "lib/*/libGLESv1_CM.so"
+        exclude "lib/*/libOpenSLES.so"
+        exclude "lib/*/libz.so"
+        exclude "lib/*/liblog.so"
+        exclude "lib/*/libm.so"
+
+        // remove arm64 libraries if testing arm32
+        if(project.properties.abifilters == "arm64-v8a") {
+            println "[idTech4Amm]: Remove arm32 libraries"
+            exclude "lib/armeabi-v7a/**"
+            // only pick arm xunwind library
+            pickFirst "lib/arm64-v8a/libxunwind.so"
+        } else if(project.properties.abifilters == "armeabi-v7a") {
+            println "[idTech4Amm]: Remove arm64 libraries"
+            exclude "lib/arm64-v8a/**"
+            // only pick arm xunwind library
+            pickFirst "lib/armeabi-v7a/libxunwind.so"
+        } else {
+            println "[idTech4Amm]: Remove nothing"
+            // only pick arm xunwind library
+            pickFirst "lib/arm**/libxunwind.so"
+        }
+
+        // keep debug info
+        if(project.properties.debugSymbols == "1") {
+            println "[idTech4Amm]: Keep library debug symbols"
+            doNotStrip "*/armeabi-v7a/*.so"
+            doNotStrip "*/arm64-v8a/*.so"
+        } else {
+            println "[idTech4Amm]: Strip library debug symbols"
+        }
+    }
+}
+
+dependencies {
+}

@@ -1,3 +1,11 @@
+.androidide/
+doom3/.cxx
+doom3/build
+gradle assembleDebug.bat
+gradle assembleRelease.bat
+gradle assembleRelease 32.bat
+gradle assembleRelease 64.bat
+
 # Gradle files
 .gradle/
 build/
