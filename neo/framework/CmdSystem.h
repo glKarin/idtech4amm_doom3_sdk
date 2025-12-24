@@ -125,15 +125,19 @@ class idCmdSystem
 		static void			ArgCompletion_SaveGame(const idCmdArgs &args, void(*callback)(const char *s));
 		static void			ArgCompletion_DemoName(const idCmdArgs &args, void(*callback)(const char *s));
 #ifdef _RAVEN
-	virtual void		ArgCompletion_Models( const idCmdArgs &args, void(*callback)( const char *s ), bool strogg, bool marine ) = 0;
+        virtual void		ArgCompletion_Models( const idCmdArgs &args, void(*callback)( const char *s ), bool strogg, bool marine ) = 0;
 
-	static void			ArgCompletion_ForceModel( const idCmdArgs &args, void(*callback)( const char *s ) );
-	static void			ArgCompletion_ForceModelStrogg( const idCmdArgs &args, void(*callback)( const char *s ) );
-	static void			ArgCompletion_ForceModelMarine( const idCmdArgs &args, void(*callback)( const char *s ) );
+        static void			ArgCompletion_ForceModel( const idCmdArgs &args, void(*callback)( const char *s ) );
+        static void			ArgCompletion_ForceModelStrogg( const idCmdArgs &args, void(*callback)( const char *s ) );
+        static void			ArgCompletion_ForceModelMarine( const idCmdArgs &args, void(*callback)( const char *s ) );
+#endif
+#if defined(_RAVEN) || 1
+		static void			ArgCompletion_GuiName( const idCmdArgs &args, void(*callback)(const char *s) );
 #endif
 };
 
 extern idCmdSystem 	*cmdSystem;
+const char * Com_GetCommandDescription(const char *name);
 
 
 ID_INLINE void idCmdSystem::ArgCompletion_Boolean(const idCmdArgs &args, void(*callback)(const char *s))
@@ -174,25 +178,45 @@ ID_INLINE void idCmdSystem::ArgCompletion_MapName(const idCmdArgs &args, void(*c
 ID_INLINE void idCmdSystem::ArgCompletion_ModelName(const idCmdArgs &args, void(*callback)(const char *s))
 {
 	cmdSystem->ArgCompletion_FolderExtension(args, callback, "models/", false, ".lwo", ".ase", ".md5mesh", ".ma"
+            , ".md5meshs"
 #ifdef _MODEL_OBJ
 											 , ".obj"
 #endif
 #ifdef _MODEL_DAE
 											 , ".dae"
 #endif
+#ifdef _MODEL_PSK
+                                             , ".psk"
+#endif
+#ifdef _MODEL_IQM
+                                             , ".iqm"
+#endif
+#ifdef _MODEL_SMD
+                                             , ".smd"
+#endif
+#ifdef _MODEL_GLTF
+                                             , ".gltf", ".glb"
+#endif
+#ifdef _MODEL_FBX
+                                             , ".fbx"
+#endif
 											 , NULL);
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_SoundName(const idCmdArgs &args, void(*callback)(const char *s))
 {
-	cmdSystem->ArgCompletion_FolderExtension(args, callback, "sound/", false, ".wav", ".ogg", NULL);
+	cmdSystem->ArgCompletion_FolderExtension(args, callback, "sound/", false, ".wav", ".ogg", 
+#ifdef _SND_MP3
+			".mp3", 
+#endif
+			NULL);
 }
 
 ID_INLINE void idCmdSystem::ArgCompletion_ImageName(const idCmdArgs &args, void(*callback)(const char *s))
 {
 	cmdSystem->ArgCompletion_FolderExtension(args, callback, "/", false, ".tga", ".dds", ".jpg", ".pcx"
 #ifdef _USING_STB
-											 , ".jpeg", ".png", "dds", "bmp"
+											 , ".jpeg", ".png", ".dds", ".bmp", ".exr", ".hdr"
 #endif
 											 , NULL);
 }
@@ -230,4 +254,12 @@ ID_INLINE void idCmdSystem::ArgCompletion_ForceModelMarine( const idCmdArgs &arg
 	cmdSystem->ArgCompletion_Models( args, callback, false, true );
 }
 #endif
+
+#if defined(_RAVEN) || 1
+ID_INLINE void idCmdSystem::ArgCompletion_GuiName( const idCmdArgs &args, void(*callback)( const char *s ) )
+{
+	cmdSystem->ArgCompletion_FolderExtension( args, callback, "guis/", false, ".gui", false );
+}
+#endif
+
 #endif /* !__CMDSYSTEM_H__ */

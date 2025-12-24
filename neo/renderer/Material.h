@@ -69,12 +69,19 @@ typedef enum {
 	// set AFTER image format selection
 } textureRepeat_t;
 
+#ifdef _RAVENxxx //karin: TODO decal in Quake4
+typedef struct {
+    int		stayTime;		// msec for no change
+    float	maxAngle;		// maximum dot product to reject projection angles
+} decalInfo_t;
+#else
 typedef struct {
 	int		stayTime;		// msec for no change
 	int		fadeTime;		// msec to fade vertex colors over
 	float	start[4];		// vertex color at spawn (possibly out of 0.0 - 1.0 range, will clamp after calc)
 	float	end[4];			// vertex color at fade-out (possibly out of 0.0 - 1.0 range, will clamp after calc)
 } decalInfo_t;
+#endif
 
 typedef enum {
 	DFRM_NONE,
@@ -100,6 +107,13 @@ typedef enum {
 	DI_CUBE_RENDER,
 	DI_MIRROR_RENDER,
 	DI_XRAY_RENDER,
+#ifdef _RAVEN
+    // RAVEN BEGIN
+// AReis: Used for water reflection/refraction.
+    DI_REFLECTION_RENDER,
+    DI_REFRACTION_RENDER,
+// RAVEN END
+#endif
 #ifdef _HUMANHEAD
 	DI_PORTAL_RENDER, // HUMANHEAD
 	DI_SKYBOX_RENDER, // HUMANHEAD tmj
@@ -134,7 +148,8 @@ typedef enum {
 // RAVEN END
 #endif
 #ifdef _HUMANHEAD
-	, OP_TYPE_FRAGMENTPROGRAMS // HUMANHEAD CJR:  Added so fragment programs support can be toggled
+	,
+    OP_TYPE_FRAGMENTPROGRAMS // HUMANHEAD CJR:  Added so fragment programs support can be toggled
 #endif
 } expOpType_t;
 
@@ -163,6 +178,12 @@ typedef enum {
 	EXP_REG_GLOBAL6,
 	EXP_REG_GLOBAL7,
 
+#ifdef _RAVEN
+    // RAVEN BEGIN
+// rjohnson: added vertex randomizing
+	EXP_REG_VERTEX_RANDOMIZER,
+// RAVEN END
+#endif
 #ifdef _HUMANHEAD
 	EXP_REG_DISTANCE, // HUMANHEAD: CJR
 #endif
@@ -371,10 +392,11 @@ typedef enum {
 // RAVEN END
 #endif
 #ifdef _HUMANHEAD
-	, MF_USESDISTANCE				= BIT(7),	// HUMANHEAD pdm: distance optimization
+	,
+    MF_USESDISTANCE				= BIT(7),	// HUMANHEAD pdm: distance optimization
 	MF_LIGHT_WHOLE_MESH			= BIT(8),	// HUMANHEAD bjk: dont cull tris with light bounds
     //HUMANHEAD PCF rww 05/11/06 - can be used explicitly by surfaces which use alpha coverage but do not want collision anyway
-    MF_SKIPCLIP = BIT(9)
+    MF_SKIPCLIP                 = BIT(9)
 		//HUMANHEAD END
 #endif
 } materialFlags_t;
@@ -425,14 +447,14 @@ typedef enum {
 	
 #ifdef _HUMANHEAD
 	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
-	CONTENTS_FORCEFIELD = BIT(16),	// forcefield matter, only passable in spirit mode
-	CONTENTS_SPIRITBRIDGE = BIT(17),	// cjr - Collidable only by spiritwalking players
+	CONTENTS_FORCEFIELD         = BIT(16),	// forcefield matter, only passable in spirit mode
+	CONTENTS_SPIRITBRIDGE       = BIT(17),	// cjr - Collidable only by spiritwalking players
 	// END HUMANHEAD
 
 	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
 	CONTENTS_BLOCK_RADIUSDAMAGE = BIT(18/*20*/),	// aob - used by objects like forcefields and chaff
-	CONTENTS_SHOOTABLE = BIT(19/*21*/),	// pdm - bullets collide with but not player or monsters
-	CONTENTS_DEATHVOLUME = BIT(22),	// AOB: used by death zones so the player can do a simple contents check
+	CONTENTS_SHOOTABLE          = BIT(19/*21*/),	// pdm - bullets collide with but not player or monsters
+	CONTENTS_DEATHVOLUME        = BIT(22),	// AOB: used by death zones so the player can do a simple contents check
 	CONTENTS_VEHICLECLIP		= BIT(23),	// PDM: used to clip off vehicle movement
 	CONTENTS_OWNER_TO_OWNER		= BIT(24),	// bjk: used to disable owner to owner rejection for collision
 	CONTENTS_GAME_PORTAL		= BIT(25),  // cjr: used for clipping against game portals (glow portals, etc)

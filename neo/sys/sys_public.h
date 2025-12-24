@@ -447,6 +447,15 @@ void			Sys_SetFatalError(const char *error);
 // display perference dialog
 void			Sys_DoPreferences(void);
 
+void			Sys_Rmdir(const char *path);
+enum {
+    FST_NONE = 0,
+    FST_FILE,
+    FST_DIRECTORY,
+    FST_OTHER,
+};
+int 			Sys_Stat(const char *path);
+
 /*
 ==============================================================
 
@@ -557,7 +566,7 @@ typedef struct {
 	intptr_t	threadHandle;
 	size_t		threadId;
 #ifdef _NO_PTHREAD_CANCEL //karin: no pthread_cancel on Android
-	bool		threadCancel;
+	volatile bool		threadCancel;
 #endif
 } xthreadInfo;
 
@@ -572,10 +581,20 @@ void				Sys_DestroyThread(xthreadInfo &info);   // sets threadHandle back to 0
 // if index != NULL, set the index in g_threads array (use -1 for "main" thread)
 const char 		*Sys_GetThreadName(int *index = 0);
 
+const int MAX_CRITICAL_SECTIONS		= 4
+//#ifdef _HUMANHEAD //karin: for subtitle in snd system
+//+ 1
+//#endif
+#if defined(_MULTITHREAD) && defined(_IMGUI) //karin: for imgui in multithreading
++ 1
+#endif
 #if 1 //def _SDL
-const int MAX_CRITICAL_SECTIONS		= 5;
-#else
-const int MAX_CRITICAL_SECTIONS		= 4;
++ 1
+#endif
+;
+
+#ifdef _HUMANHEAD //karin: for subtitle in snd system
+#define CRITICAL_SECTION_SUBTITLE CRITICAL_SECTION_THREE
 #endif
 
 enum {
@@ -583,6 +602,12 @@ enum {
 	CRITICAL_SECTION_ONE,
 	CRITICAL_SECTION_TWO,
 	CRITICAL_SECTION_THREE
+//#ifdef _HUMANHEAD //karin: for subtitle in snd system
+//    , CRITICAL_SECTION_SUBTITLE
+//#endif
+#if defined(_MULTITHREAD) && defined(_IMGUI) //karin: for imgui in multithreading
+    , CRITICAL_SECTION_IMGUI
+#endif
 #if 1 //def _SDL
     , CRITICAL_SECTION_SYS
 #endif
@@ -590,6 +615,20 @@ enum {
 
 void				Sys_EnterCriticalSection(int index = CRITICAL_SECTION_ZERO);
 void				Sys_LeaveCriticalSection(int index = CRITICAL_SECTION_ZERO);
+
+class idCriticalSectionLockGuard
+{
+public:
+    explicit idCriticalSectionLockGuard(int index = CRITICAL_SECTION_ZERO)
+            : _index(index) {
+        Sys_EnterCriticalSection(_index);
+    }
+    ~idCriticalSectionLockGuard() {
+        Sys_LeaveCriticalSection(_index);
+    }
+private:
+    int _index;
+};
 
 const int MAX_TRIGGER_EVENTS		= (
         4
@@ -674,14 +713,14 @@ class idSys
 		virtual void			OpenURL(const char *url, bool quit) = 0;
 		virtual void			StartProcess(const char *exePath, bool quit) = 0;
 #ifdef _RAVEN
-	virtual int				Milliseconds(void) = 0;
+	    virtual int				Milliseconds(void) = 0;
 #endif
 #ifdef _HUMANHEAD
-	//HUMANHEAD rww
-	//logitech lcd keyboard interface functions
-	virtual bool			LGLCD_Valid(void) = 0;
-	virtual void			LGLCD_UploadImage(unsigned char *pixels, int w, int h, bool highPriority, bool flipColor) = 0;
-	//HUMANHEAD END
+        //HUMANHEAD rww
+        //logitech lcd keyboard interface functions
+        virtual bool			LGLCD_Valid(void) = 0;
+        virtual void			LGLCD_UploadImage(unsigned char *pixels, int w, int h, bool highPriority, bool flipColor) = 0;
+        //HUMANHEAD END
 #endif
 };
 
@@ -722,5 +761,7 @@ void			Sys_Usleep(int usec);
 void			Sys_Msleep(int msec);
 const char *	Sys_DLLDefaultPath(void);
 uint64_t		Sys_Microseconds(void);
+int             Sys_SetEnv(const char *name, const char *value, bool override = false);
+int             Sys_UnsetEnv(const char *name);
 
 #endif /* !__SYS_PUBLIC__ */

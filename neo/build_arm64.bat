@@ -7,7 +7,7 @@ set MAKE=ninja
 rem setup your cmake program path
 set CMAKE=cmake
 rem setup your Android-NDK path
-set NDK=E:\dev\android_sdk\android-ndk-r23c
+set NDK=E:\devinst\Android_Sdk\ndk\23.2.8568313
 rem setup build target arch
 set ABI=arm64-v8a
 rem setup target cpu

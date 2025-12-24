@@ -93,7 +93,7 @@ If you have questions concerning this license or the applicable additional terms
 
 // don't define ID_ALLOW_TOOLS when we don't want tool code in the executable.
 #ifdef _MFC_VER
-#if defined( _WIN32 ) && !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD )
+#if defined( _WIN32 ) && !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD ) && !defined(ID_ALLOW_TOOLS)
 #define	ID_ALLOW_TOOLS
 #endif
 #endif
@@ -152,4 +152,24 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #else
 #define ID_GAME_API
+#endif
+
+#ifdef _RAVEN
+#define GAME_NAME_ID "quake4"
+#elif defined(_HUMANHEAD)
+#define GAME_NAME_ID "prey"
+#else
+#define GAME_NAME_ID "doom3"
+#endif
+
+#if !defined(_IDTECH4AMM_PATCH)
+#define _IDTECH4AMM_PATCH 1
+#endif
+
+#if !defined(_IDTECH4AMM_VERSION)
+#define _IDTECH4AMM_VERSION "1.1.0harmattan" #_IDTECH4AMM_PATCH
+#endif
+
+#if !defined(_IDTECH4AMM_BUILD)
+#define _IDTECH4AMM_BUILD ""
 #endif

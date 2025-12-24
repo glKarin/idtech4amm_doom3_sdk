@@ -1,7 +1,16 @@
-.ninja*
-build.ninja
-CMakeCache.txt
-CMakeFiles
-cmake_install.cmake
-build
-android_gradle_build.json
+/.ninja*
+/build.ninja
+/CMakeCache.txt
+/CMakeFiles
+
+/cmake-*
+
+/android_gradle_build.json
+
+# VSMC
+/*.dir
+/*.vcxproj*
+/cmake_install.cmake
+/build
+/Release
+/Debug

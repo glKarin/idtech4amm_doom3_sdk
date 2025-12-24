@@ -44,6 +44,8 @@ If you have questions concerning this license or the applicable additional terms
 #define MD5_CAMERA_EXT			"md5camera"
 #define MD5_VERSION				10
 
+#define MD5_STATIC_MESH_EXT     "md5meshs" // mark as static model, but file content is same as md5mesh
+
 // using shorts for triangle indexes can save a significant amount of traffic, but
 // to support the large models that renderBump loads, they need to be 32 bits
 #ifdef _GL_INT_INDEX
@@ -305,7 +307,14 @@ class idRenderModel
 		// The renderer will delete the returned dynamic model the next view
 		// This isn't const, because it may need to reload a purged model if it
 		// wasn't precached correctly.
-		virtual idRenderModel 		*InstantiateDynamicModel(const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel) = 0;
+#ifdef _RAVEN
+        // RAVEN BEGIN
+        // dluetscher: added surface mask parameter
+        virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel, dword surfMask = ~SURF_COLLISION  ) = 0;
+        // RAVEN END
+#else
+        virtual idRenderModel 		*InstantiateDynamicModel(const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel) = 0;
+#endif
 
 		// Returns the number of joints or 0 if the model is not an MD5
 		virtual int					NumJoints(void) const = 0;
@@ -333,11 +342,6 @@ class idRenderModel
         // RAVEN BEGIN
         // bdube: surface flag manipulation
         virtual int					GetSurfaceMask ( const char* surface ) const = 0;
-
-        // RAVEN BEGIN
-        // dluetscher: added surface mask parameter
-        virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel, dword surfMask/* = ~SURF_COLLISION */ ) = 0;
-        // RAVEN END
 
 		// jscott: for portal skies
         virtual void                                SetHasSky( bool on ) = 0;
