@@ -32,6 +32,7 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v2
+        ref: 'bloodmod'
 
       - name: Setup jdk 11
         uses: actions/setup-java@v4
@@ -57,7 +58,7 @@ jobs:
           echo "Build release apk"
           ./gradlew assembleRelease
           echo "Copy release apk"
-          apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}.apk
+          apk_file=${GITHUB_WORKSPACE}/apks/doom3bloodmod_${{ steps.env.outputs.version }}.apk
           mv ./doom3/build/outputs/apk/release/doom3-release.apk ${apk_file}
           echo "Clean builds"
           ./gradlew clean
@@ -69,7 +70,7 @@ jobs:
           echo "Build arm64 release apk"
           ./gradlew assembleRelease -Pabifilters=arm64-v8a
           echo "Copy arm64 release apk"
-          apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}-arm64.apk
+          apk_file=${GITHUB_WORKSPACE}/apks/doom3bloodmod_${{ steps.env.outputs.version }}-arm64.apk
           mv ./doom3/build/outputs/apk/release/doom3-release.apk ${apk_file}
           echo "Clean arm64 builds"
           ./gradlew clean -Pabifilters=arm64-v8a
@@ -81,7 +82,7 @@ jobs:
           echo "Build arm32 release apk"
           ./gradlew assembleRelease -Pabifilters=armeabi-v7a
           echo "Copy arm32 release apk"
-          apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}-armv7.apk
+          apk_file=${GITHUB_WORKSPACE}/apks/doom3bloodmod_${{ steps.env.outputs.version }}-armv7.apk
           mv ./doom3/build/outputs/apk/release/doom3-release.apk ${apk_file}
           echo "Clean arm32 builds"
           ./gradlew clean -Pabifilters=armeabi-v7a
@@ -90,7 +91,7 @@ jobs:
       - name: Delete tag and release
         uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
-          tag_name: android_apk
+          tag_name: android_apk_bloodmod
           delete_release: true
           repo: glKarin/idtech4amm_doom3_sdk
           github_token: ${{ secrets.TOKEN }}
@@ -105,9 +106,9 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.TOKEN }}"
-          automatic_release_tag: android_apk
-          prerelease: false
-          title: "doom3 apk ${{ steps.env.outputs.version }} build"
+          automatic_release_tag: android_apk_bloodmod
+          prerelease: true
+          title: "doom3 bloodmod apk ${{ steps.env.outputs.version }} build"
           files: |
             ${{ steps.all.outputs.apk }}
             ${{ steps.arm64.outputs.apk }}
