@@ -76,10 +76,8 @@
         <activity
             android:label="@string/app_name"
             android:screenOrientation="landscape"
-            android:launchMode="singleTask"
             android:exported="true"
-            android:name=".Main"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
+            android:name=".Main">
             <meta-data android:name="COMMAND" android:value=""/> <!-- other commands -->
             <meta-data android:name="com_allowConsole" android:value="1"/> <!-- property parameter -->
             <meta-data android:name="disconnect" android:value=""/> <!-- command parameter: value is empty -->
@@ -91,10 +89,8 @@
         <activity
             android:label="@string/app_roe_name"
             android:screenOrientation="landscape"
-            android:launchMode="singleTask"
             android:exported="true"
-            android:name=".Main_d3xp"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
+            android:name=".Main_d3xp">
             <meta-data android:name="COMMAND" android:value=""/>
             <meta-data android:name="com_allowConsole" android:value="1"/>
             <meta-data android:name="disconnect" android:value=""/>

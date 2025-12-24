@@ -102,7 +102,7 @@ jobs:
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.TOKEN }}"
-          automatic_release_tag: "v${{ steps.env.outputs.version }}"
+          automatic_release_tag: android_apk
           prerelease: false
           title: "doom3 apk ${{ steps.env.outputs.version }} build"
           files: |
