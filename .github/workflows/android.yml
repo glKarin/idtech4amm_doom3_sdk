@@ -45,11 +45,16 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install build-essential # libtinfo5
 
+      - name: Ready build
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          chmod +x ./gradlew
+          mkdir ./apks
+
       - name: Build all with Gradle
         id: all
         run: |
           echo "Build release apk"
-          chmod +x ./gradlew
           ./gradlew assembleRelease
           echo "Copy release apk"
           apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}.apk
@@ -62,7 +67,6 @@ jobs:
         id: arm64
         run: |
           echo "Build arm64 release apk"
-          chmod +x ./gradlew
           ./gradlew assembleRelease -Pabifilters=arm64-v8a
           echo "Copy arm64 release apk"
           apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}-arm64.apk
@@ -75,7 +79,6 @@ jobs:
         id: arm32
         run: |
           echo "Build arm32 release apk"
-          chmod +x ./gradlew
           ./gradlew assembleRelease -Pabifilters=armeabi-v7a
           echo "Copy arm32 release apk"
           apk_file=${GITHUB_WORKSPACE}/apks/doom3_${{ steps.env.outputs.version }}-armv7.apk
