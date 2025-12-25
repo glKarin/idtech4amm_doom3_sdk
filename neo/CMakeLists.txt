@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR) # 2.6
 
 project(doom3sdk)
 
-option(IS_DHEWM3    	"Is Dhewm3 mod"      	ON)
+option(IS_DHEWM3    	"If is Dhewm3 mod"      	ON)
 
 set(IDTECH4AMM_ENGINE_PATCH 70)
 set(IDTECH4AMM_ENGINE_VERSION "1.1.0harmattan${IDTECH4AMM_ENGINE_PATCH}")

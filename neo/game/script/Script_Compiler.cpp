@@ -2695,6 +2695,6 @@ void idCompiler::CompileFile( const char *text, const char *filename, bool toCon
 		//     as idProgram::CompileText() called fileSystem->RelativePathToOSPath() on it
 		//     which does not return the *actual* full path of that file but invents one,
 		//     so revert that to the relative filename which at least isn't misleading
-		gameLocal.Printf( "Compiled '%s': %u ms\n", fileSystem->OSPathToRelativePath(origFileName), compile_time.Milliseconds() );
+		gameLocal.Printf( "Compiled '%s': %.1f ms\n", fileSystem->OSPathToRelativePath(origFileName), compile_time.Milliseconds() );
 	}
 }

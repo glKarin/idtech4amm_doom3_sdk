@@ -765,7 +765,7 @@ idSaveGame::WriteBuildNumber
 ======================
 */
 void idSaveGame::WriteBuildNumber( const int value ) {
-#ifdef _BLOODMOD
+#if DHEWM3_GAME_API_VERSION
 	file->WriteInt( DHEWM3_BUILD_NUMBER );
 #else
 	file->WriteInt( BUILD_NUMBER );

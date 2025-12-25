@@ -76,6 +76,7 @@ protected:
 	idStr					brokenModel;			// model set when health drops down to or below zero
 	idStr					damage;					// if > 0 apply damage to hit entities
 	idStr					fxCollide;				// fx system to start when collides with something
+	idStr                                   mtrCollide;             // darknar
 	int						nextCollideFxTime;		// next time it is ok to spawn collision fx
 	float					minDamageVelocity;		// minimum velocity before moveable applies damage
 	float					maxDamageVelocity;		// velocity at which the maximum damage is applied

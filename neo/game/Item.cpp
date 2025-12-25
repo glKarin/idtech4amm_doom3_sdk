@@ -870,7 +870,9 @@ idMoveableItem::idMoveableItem() {
 	trigger = NULL;
 	smoke = NULL;
 	smokeTime = 0;
+
 	nextSoundTime = 0; // darknar collide data
+	nextCollideFxTime = 0; // Blood Mod
 }
 
 /*
@@ -896,8 +898,11 @@ void idMoveableItem::Save( idSaveGame *savefile ) const {
 
 	savefile->WriteParticle( smoke );
 	savefile->WriteInt( smokeTime );
-	savefile->WriteString(fxCollide); // darknar collide data
-	savefile->WriteInt(nextSoundTime); // darknar collide data
+	
+	savefile->WriteString( fxCollide ); // darknar collide data
+	savefile->WriteString( mtrCollide ); // darknar
+	savefile->WriteInt( nextSoundTime ); // darknar collide data
+	savefile->WriteInt( nextCollideFxTime ); // Blood Mod
 }
 
 /*
@@ -913,8 +918,11 @@ void idMoveableItem::Restore( idRestoreGame *savefile ) {
 
 	savefile->ReadParticle( smoke );
 	savefile->ReadInt( smokeTime );
-	savefile->ReadString(fxCollide); // darknar collide data
-	savefile->ReadInt(nextSoundTime); // darknar collide data
+	
+	savefile->ReadString( fxCollide ); // darknar collide data
+	savefile->ReadString( mtrCollide ); // darknar
+	savefile->ReadInt( nextSoundTime ); // darknar collide data
+	savefile->ReadInt( nextCollideFxTime ); // Blood Mod
 }
 
 /*
@@ -951,7 +959,10 @@ void idMoveableItem::Spawn( void ) {
 		trm.Shrink( CM_CLIP_EPSILON );
 	}
 
-	fxCollide = spawnArgs.GetString("fx_collide"); // darknar collide data
+	fxCollide = spawnArgs.GetString( "fx_collide" ); // darknar collide data
+	mtrCollide = spawnArgs.GetString( "mtr_collide" ); // darknar
+	nextCollideFxTime = 0; // Blood Mod
+	
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
 	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
@@ -1016,18 +1027,31 @@ idMoveableItem::Collide // darknar collide data, allows idMoveableGibItem and id
 bool idMoveableItem::Collide(const trace_t& collision, const idVec3& velocity) {
 	float v, f;
 
-	v = -(velocity * collision.c.normal);
-	if (v > 80 && gameLocal.time > nextSoundTime) {
-		if (fxCollide.Length()) {
-			idEntityFx::StartFx(fxCollide, &collision.c.point, NULL, this, false);
-		}
-		f = v > 200 ? 1.0f : idMath::Sqrt(v - 80) * 0.091f;
-		if (StartSound("snd_bounce", SND_CHANNEL_ANY, 0, false, NULL)) {
+	v = -( velocity * collision.c.normal );
+	if ( v > 80 && gameLocal.time > nextSoundTime ) {
+		f = v > 200 ? 1.0f : idMath::Sqrt( v - 80 ) * 0.091f;
+		if ( StartSound( "snd_bounce", SND_CHANNEL_ANY, 0, false, NULL ) ) {
 			// don't set the volume unless there is a bounce sound as it overrides the entire channel
 			// which causes footsteps on ai's to not honor their shader parms
-			SetSoundVolume(f);
+			SetSoundVolume( f );
 		}
 		nextSoundTime = gameLocal.time + 500;
+		
+		// darknar start
+		if ( fxCollide.Length() && gameLocal.time > nextCollideFxTime ) {
+			if ( mtrCollide.Length() ) {
+				gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, spawnArgs.GetFloat( "gib_decal_size", "16.0" ), spawnArgs.RandomPrefix( "mtr_collide", gameLocal.random ) ); // Blood Mod 1.8
+			}
+			// darknar end
+			// Blood Mod start
+			int CollideFxTime;
+			idEntityFx::StartFx( fxCollide, &collision.c.point, NULL, this, false );
+			if ( !spawnArgs.GetInt( "next_collide_fx_time", "500", CollideFxTime ) ) {
+				CollideFxTime = spawnArgs.GetInt( va( "next_collide_fx_time" ), "500" ); // Set a delay for the next blood splat to appear in Fx effects. 500 = default
+			}
+			nextCollideFxTime = gameLocal.time + CollideFxTime;
+		}
+		// Blood Mod end
 	}
 
 	return false;
@@ -1073,7 +1097,7 @@ idEntity *idMoveableItem::DropItem( const char *classname, const idVec3 &origin,
 		item->GetPhysics()->SetLinearVelocity( velocity );
 		item->UpdateVisuals();
 
-		// Blood Mod
+		// Blood Mod deleted this
         /*
 		if ( activateDelay ) {
 			item->PostEventMS( &EV_Activate, activateDelay, item );

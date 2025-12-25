@@ -28,7 +28,7 @@ jobs:
         run: |
           release=1
           echo "release=${release}" >> $GITHUB_OUTPUT
-          echo "version=1.3.1.1304.${release}" >> $GITHUB_OUTPUT
+          echo "version=1.8.${release}" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v2
