@@ -427,7 +427,7 @@ void idGameLocal::SaveGame( idFile *f ) {
 		f->ForceFlush();
 	}
 
-#if DHEWM3_GAME_API_VERSION
+#if DHEWM3_BUILD_NUMBER // for compat idTech4A++
 	savegame.WriteBuildNumber( DHEWM3_BUILD_NUMBER );
 #else
 	savegame.WriteBuildNumber( BUILD_NUMBER );
