@@ -87,5 +87,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:label="@string/app_roe_name"
+            android:screenOrientation="landscape"
+            android:exported="true"
+            android:name=".Main_d3xp">
+            <meta-data android:name="COMMAND" android:value=""/>
+            <meta-data android:name="com_allowConsole" android:value="1"/>
+            <meta-data android:name="disconnect" android:value=""/>
+            <meta-data android:name="GAME_BASE" android:value="d3xp"/> <!-- set fs_game_base for d3xp mod -->
+            <meta-data android:name="MOD" android:value="bloodmod_roe"/> <!-- override mod name -->
+            <meta-data android:name="DLL" android:value="d3xp"/> <!-- override library name -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>    
 </manifest> 
